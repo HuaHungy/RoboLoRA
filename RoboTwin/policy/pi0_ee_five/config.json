@@ -1,0 +1,21 @@
+{
+  "tasks": ["adjust_bottle", "click_alarmclock", "place_can_basket", "place_container_plate", "rotate_qrcode"],
+  "dataset_root": "../../../data_clustering/data/lerobot",
+  "pretrained_params": "/home/huahungy/.cache/openpi/openpi-assets/checkpoints/pi0_base/params",
+  "training_mode": "joint",
+  "batch_size": 1,
+  "num_train_steps": 100000,
+  "num_workers": 0,
+  "seed": 42,
+  "peak_lr": 0.000025,
+  "warmup_steps": 500,
+  "save_interval": 2000,
+  "action_horizon": 50,
+  "execute_steps": 10,
+  "diffusion_steps": 10,
+  "task_config": "demo_aloha",
+  "eval_episodes": 100,
+  "eval_seed": 0,
+  "instruction_type": "unseen",
+  "eval_video": true
+}

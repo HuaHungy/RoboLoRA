@@ -1,0 +1,28 @@
+{
+  "seed": 42,
+  "output_dir": "../runs/aloha_hdf5",
+  "datasets": [
+    {
+      "id": "place_empty_cup_10",
+      "root": "../../RoboTwin/policy/pi0/training_data/place_empty_cup-demo_aloha-10",
+      "glob": "episode_*/*.hdf5",
+      "format": "aloha_hdf5",
+      "robot_id": "aloha_dual_arm",
+      "fps": 25,
+      "action_semantics": "absolute_joint_target",
+      "gripper_indices": [6, 13],
+      "image_key": "observations/images/cam_high"
+    }
+  ],
+  "window": {"length": 50, "stride": 25},
+  "representation": {"mode": "joint", "visual_weight": 0.0},
+  "training": {
+    "epochs": 30,
+    "batch_size": 128,
+    "hidden_dim": 256,
+    "latent_dim": 128,
+    "validation_fraction": 0.2,
+    "device": "cpu"
+  },
+  "clustering": {"k_values": [16, 32, 48], "hdbscan": true, "min_cluster_size": 20}
+}

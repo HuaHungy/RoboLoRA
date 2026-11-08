@@ -1,0 +1,16 @@
+# Generated on 2026-07-20 19:52:28
+model: beat_block_hammer_RDT
+data_path: training_data/beat_block_hammer_RDT
+checkpoint_path: checkpoints/beat_block_hammer_RDT
+pretrained_model_name_or_path: ../weights/RDT/rdt-1b
+cuda_visible_device: 0
+train_batch_size: 4
+sample_batch_size: 8
+max_train_steps: 10001
+checkpointing_period: 5000
+sample_period: 100
+checkpoints_total_limit: 40
+learning_rate: 0.0001
+dataloader_num_workers: 8
+state_noise_snr: 40
+gradient_accumulation_steps: 6

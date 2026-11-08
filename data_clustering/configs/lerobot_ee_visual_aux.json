@@ -1,0 +1,16 @@
+{
+  "source_run": "../runs/lerobot_ee_reviewed64",
+  "output_dir": "../runs/lerobot_ee_visual_aux",
+  "feature_cache": "../data/visual_cache/resnet18_head_start_last_v1",
+  "encoder_weights": "/home/huahungy/.cache/torch/hub/checkpoints/resnet18-f37072fd.pth",
+  "camera": "observation.images.cam_high",
+  "device": "cpu",
+  "batch_size": 64,
+  "threads": 4,
+  "visual_dim": 8,
+  "context_weight": 0.25,
+  "visual_distance_weight": 0.05,
+  "comparison_weights": [0.0, 0.02, 0.05, 0.1],
+  "k": 32,
+  "seed": 42
+}

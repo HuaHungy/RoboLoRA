@@ -1,0 +1,485 @@
+{
+  "seed": 42,
+  "output_dir": "../runs/lerobot_ee_all_smoke",
+  "datasets": [
+    {
+      "id": "adjust_bottle",
+      "root": "../data/lerobot/adjust_bottle_pi0_ee",
+      "glob": "data/chunk-*/*.parquet",
+      "format": "lerobot_ee",
+      "robot_id": "aloha_dual_arm",
+      "fps": 16.666666666666668,
+      "image_key": "observation.images.cam_high"
+    },
+    {
+      "id": "beat_block_hammer",
+      "root": "../data/lerobot/beat_block_hammer_pi0_ee",
+      "glob": "data/chunk-*/*.parquet",
+      "format": "lerobot_ee",
+      "robot_id": "aloha_dual_arm",
+      "fps": 16.666666666666668,
+      "image_key": "observation.images.cam_high"
+    },
+    {
+      "id": "blocks_ranking_rgb",
+      "root": "../data/lerobot/blocks_ranking_rgb_pi0_ee",
+      "glob": "data/chunk-*/*.parquet",
+      "format": "lerobot_ee",
+      "robot_id": "aloha_dual_arm",
+      "fps": 16.666666666666668,
+      "image_key": "observation.images.cam_high"
+    },
+    {
+      "id": "blocks_ranking_size",
+      "root": "../data/lerobot/blocks_ranking_size_pi0_ee",
+      "glob": "data/chunk-*/*.parquet",
+      "format": "lerobot_ee",
+      "robot_id": "aloha_dual_arm",
+      "fps": 16.666666666666668,
+      "image_key": "observation.images.cam_high"
+    },
+    {
+      "id": "click_alarmclock",
+      "root": "../data/lerobot/click_alarmclock_pi0_ee",
+      "glob": "data/chunk-*/*.parquet",
+      "format": "lerobot_ee",
+      "robot_id": "aloha_dual_arm",
+      "fps": 16.666666666666668,
+      "image_key": "observation.images.cam_high"
+    },
+    {
+      "id": "click_bell",
+      "root": "../data/lerobot/click_bell_pi0_ee",
+      "glob": "data/chunk-*/*.parquet",
+      "format": "lerobot_ee",
+      "robot_id": "aloha_dual_arm",
+      "fps": 16.666666666666668,
+      "image_key": "observation.images.cam_high"
+    },
+    {
+      "id": "dump_bin_bigbin",
+      "root": "../data/lerobot/dump_bin_bigbin_pi0_ee",
+      "glob": "data/chunk-*/*.parquet",
+      "format": "lerobot_ee",
+      "robot_id": "aloha_dual_arm",
+      "fps": 16.666666666666668,
+      "image_key": "observation.images.cam_high"
+    },
+    {
+      "id": "grab_roller",
+      "root": "../data/lerobot/grab_roller_pi0_ee",
+      "glob": "data/chunk-*/*.parquet",
+      "format": "lerobot_ee",
+      "robot_id": "aloha_dual_arm",
+      "fps": 16.666666666666668,
+      "image_key": "observation.images.cam_high"
+    },
+    {
+      "id": "handover_block",
+      "root": "../data/lerobot/handover_block_pi0_ee",
+      "glob": "data/chunk-*/*.parquet",
+      "format": "lerobot_ee",
+      "robot_id": "aloha_dual_arm",
+      "fps": 16.666666666666668,
+      "image_key": "observation.images.cam_high"
+    },
+    {
+      "id": "handover_mic",
+      "root": "../data/lerobot/handover_mic_pi0_ee",
+      "glob": "data/chunk-*/*.parquet",
+      "format": "lerobot_ee",
+      "robot_id": "aloha_dual_arm",
+      "fps": 16.666666666666668,
+      "image_key": "observation.images.cam_high"
+    },
+    {
+      "id": "hanging_mug",
+      "root": "../data/lerobot/hanging_mug_pi0_ee",
+      "glob": "data/chunk-*/*.parquet",
+      "format": "lerobot_ee",
+      "robot_id": "aloha_dual_arm",
+      "fps": 16.666666666666668,
+      "image_key": "observation.images.cam_high"
+    },
+    {
+      "id": "lift_pot",
+      "root": "../data/lerobot/lift_pot_pi0_ee",
+      "glob": "data/chunk-*/*.parquet",
+      "format": "lerobot_ee",
+      "robot_id": "aloha_dual_arm",
+      "fps": 16.666666666666668,
+      "image_key": "observation.images.cam_high"
+    },
+    {
+      "id": "move_can_pot",
+      "root": "../data/lerobot/move_can_pot_pi0_ee",
+      "glob": "data/chunk-*/*.parquet",
+      "format": "lerobot_ee",
+      "robot_id": "aloha_dual_arm",
+      "fps": 16.666666666666668,
+      "image_key": "observation.images.cam_high"
+    },
+    {
+      "id": "move_pillbottle_pad",
+      "root": "../data/lerobot/move_pillbottle_pad_pi0_ee",
+      "glob": "data/chunk-*/*.parquet",
+      "format": "lerobot_ee",
+      "robot_id": "aloha_dual_arm",
+      "fps": 16.666666666666668,
+      "image_key": "observation.images.cam_high"
+    },
+    {
+      "id": "move_playingcard_away",
+      "root": "../data/lerobot/move_playingcard_away_pi0_ee",
+      "glob": "data/chunk-*/*.parquet",
+      "format": "lerobot_ee",
+      "robot_id": "aloha_dual_arm",
+      "fps": 16.666666666666668,
+      "image_key": "observation.images.cam_high"
+    },
+    {
+      "id": "move_stapler_pad",
+      "root": "../data/lerobot/move_stapler_pad_pi0_ee",
+      "glob": "data/chunk-*/*.parquet",
+      "format": "lerobot_ee",
+      "robot_id": "aloha_dual_arm",
+      "fps": 16.666666666666668,
+      "image_key": "observation.images.cam_high"
+    },
+    {
+      "id": "open_laptop",
+      "root": "../data/lerobot/open_laptop_pi0_ee",
+      "glob": "data/chunk-*/*.parquet",
+      "format": "lerobot_ee",
+      "robot_id": "aloha_dual_arm",
+      "fps": 16.666666666666668,
+      "image_key": "observation.images.cam_high"
+    },
+    {
+      "id": "open_microwave",
+      "root": "../data/lerobot/open_microwave_pi0_ee",
+      "glob": "data/chunk-*/*.parquet",
+      "format": "lerobot_ee",
+      "robot_id": "aloha_dual_arm",
+      "fps": 16.666666666666668,
+      "image_key": "observation.images.cam_high"
+    },
+    {
+      "id": "pick_diverse_bottles",
+      "root": "../data/lerobot/pick_diverse_bottles_pi0_ee",
+      "glob": "data/chunk-*/*.parquet",
+      "format": "lerobot_ee",
+      "robot_id": "aloha_dual_arm",
+      "fps": 16.666666666666668,
+      "image_key": "observation.images.cam_high"
+    },
+    {
+      "id": "pick_dual_bottles",
+      "root": "../data/lerobot/pick_dual_bottles_pi0_ee",
+      "glob": "data/chunk-*/*.parquet",
+      "format": "lerobot_ee",
+      "robot_id": "aloha_dual_arm",
+      "fps": 16.666666666666668,
+      "image_key": "observation.images.cam_high"
+    },
+    {
+      "id": "place_a2b_left",
+      "root": "../data/lerobot/place_a2b_left_pi0_ee",
+      "glob": "data/chunk-*/*.parquet",
+      "format": "lerobot_ee",
+      "robot_id": "aloha_dual_arm",
+      "fps": 16.666666666666668,
+      "image_key": "observation.images.cam_high"
+    },
+    {
+      "id": "place_a2b_right",
+      "root": "../data/lerobot/place_a2b_right_pi0_ee",
+      "glob": "data/chunk-*/*.parquet",
+      "format": "lerobot_ee",
+      "robot_id": "aloha_dual_arm",
+      "fps": 16.666666666666668,
+      "image_key": "observation.images.cam_high"
+    },
+    {
+      "id": "place_bread_basket",
+      "root": "../data/lerobot/place_bread_basket_pi0_ee",
+      "glob": "data/chunk-*/*.parquet",
+      "format": "lerobot_ee",
+      "robot_id": "aloha_dual_arm",
+      "fps": 16.666666666666668,
+      "image_key": "observation.images.cam_high"
+    },
+    {
+      "id": "place_bread_skillet",
+      "root": "../data/lerobot/place_bread_skillet_pi0_ee",
+      "glob": "data/chunk-*/*.parquet",
+      "format": "lerobot_ee",
+      "robot_id": "aloha_dual_arm",
+      "fps": 16.666666666666668,
+      "image_key": "observation.images.cam_high"
+    },
+    {
+      "id": "place_burger_fries",
+      "root": "../data/lerobot/place_burger_fries_pi0_ee",
+      "glob": "data/chunk-*/*.parquet",
+      "format": "lerobot_ee",
+      "robot_id": "aloha_dual_arm",
+      "fps": 16.666666666666668,
+      "image_key": "observation.images.cam_high"
+    },
+    {
+      "id": "place_can_basket",
+      "root": "../data/lerobot/place_can_basket_pi0_ee",
+      "glob": "data/chunk-*/*.parquet",
+      "format": "lerobot_ee",
+      "robot_id": "aloha_dual_arm",
+      "fps": 16.666666666666668,
+      "image_key": "observation.images.cam_high"
+    },
+    {
+      "id": "place_cans_plasticbox",
+      "root": "../data/lerobot/place_cans_plasticbox_pi0_ee",
+      "glob": "data/chunk-*/*.parquet",
+      "format": "lerobot_ee",
+      "robot_id": "aloha_dual_arm",
+      "fps": 16.666666666666668,
+      "image_key": "observation.images.cam_high"
+    },
+    {
+      "id": "place_container_plate",
+      "root": "../data/lerobot/place_container_plate_pi0_ee",
+      "glob": "data/chunk-*/*.parquet",
+      "format": "lerobot_ee",
+      "robot_id": "aloha_dual_arm",
+      "fps": 16.666666666666668,
+      "image_key": "observation.images.cam_high"
+    },
+    {
+      "id": "place_dual_shoes",
+      "root": "../data/lerobot/place_dual_shoes_pi0_ee",
+      "glob": "data/chunk-*/*.parquet",
+      "format": "lerobot_ee",
+      "robot_id": "aloha_dual_arm",
+      "fps": 16.666666666666668,
+      "image_key": "observation.images.cam_high"
+    },
+    {
+      "id": "place_empty_cup",
+      "root": "../data/lerobot/place_empty_cup_pi0_ee",
+      "glob": "data/chunk-*/*.parquet",
+      "format": "lerobot_ee",
+      "robot_id": "aloha_dual_arm",
+      "fps": 16.666666666666668,
+      "image_key": "observation.images.cam_high"
+    },
+    {
+      "id": "place_fan",
+      "root": "../data/lerobot/place_fan_pi0_ee",
+      "glob": "data/chunk-*/*.parquet",
+      "format": "lerobot_ee",
+      "robot_id": "aloha_dual_arm",
+      "fps": 16.666666666666668,
+      "image_key": "observation.images.cam_high"
+    },
+    {
+      "id": "place_mouse_pad",
+      "root": "../data/lerobot/place_mouse_pad_pi0_ee",
+      "glob": "data/chunk-*/*.parquet",
+      "format": "lerobot_ee",
+      "robot_id": "aloha_dual_arm",
+      "fps": 16.666666666666668,
+      "image_key": "observation.images.cam_high"
+    },
+    {
+      "id": "place_object_basket",
+      "root": "../data/lerobot/place_object_basket_pi0_ee",
+      "glob": "data/chunk-*/*.parquet",
+      "format": "lerobot_ee",
+      "robot_id": "aloha_dual_arm",
+      "fps": 16.666666666666668,
+      "image_key": "observation.images.cam_high"
+    },
+    {
+      "id": "place_object_scale",
+      "root": "../data/lerobot/place_object_scale_pi0_ee",
+      "glob": "data/chunk-*/*.parquet",
+      "format": "lerobot_ee",
+      "robot_id": "aloha_dual_arm",
+      "fps": 16.666666666666668,
+      "image_key": "observation.images.cam_high"
+    },
+    {
+      "id": "place_object_stand",
+      "root": "../data/lerobot/place_object_stand_pi0_ee",
+      "glob": "data/chunk-*/*.parquet",
+      "format": "lerobot_ee",
+      "robot_id": "aloha_dual_arm",
+      "fps": 16.666666666666668,
+      "image_key": "observation.images.cam_high"
+    },
+    {
+      "id": "place_phone_stand",
+      "root": "../data/lerobot/place_phone_stand_pi0_ee",
+      "glob": "data/chunk-*/*.parquet",
+      "format": "lerobot_ee",
+      "robot_id": "aloha_dual_arm",
+      "fps": 16.666666666666668,
+      "image_key": "observation.images.cam_high"
+    },
+    {
+      "id": "place_shoe",
+      "root": "../data/lerobot/place_shoe_pi0_ee",
+      "glob": "data/chunk-*/*.parquet",
+      "format": "lerobot_ee",
+      "robot_id": "aloha_dual_arm",
+      "fps": 16.666666666666668,
+      "image_key": "observation.images.cam_high"
+    },
+    {
+      "id": "press_stapler",
+      "root": "../data/lerobot/press_stapler_pi0_ee",
+      "glob": "data/chunk-*/*.parquet",
+      "format": "lerobot_ee",
+      "robot_id": "aloha_dual_arm",
+      "fps": 16.666666666666668,
+      "image_key": "observation.images.cam_high"
+    },
+    {
+      "id": "put_bottles_dustbin",
+      "root": "../data/lerobot/put_bottles_dustbin_pi0_ee",
+      "glob": "data/chunk-*/*.parquet",
+      "format": "lerobot_ee",
+      "robot_id": "aloha_dual_arm",
+      "fps": 16.666666666666668,
+      "image_key": "observation.images.cam_high"
+    },
+    {
+      "id": "put_object_cabinet",
+      "root": "../data/lerobot/put_object_cabinet_pi0_ee",
+      "glob": "data/chunk-*/*.parquet",
+      "format": "lerobot_ee",
+      "robot_id": "aloha_dual_arm",
+      "fps": 16.666666666666668,
+      "image_key": "observation.images.cam_high"
+    },
+    {
+      "id": "rotate_qrcode",
+      "root": "../data/lerobot/rotate_qrcode_pi0_ee",
+      "glob": "data/chunk-*/*.parquet",
+      "format": "lerobot_ee",
+      "robot_id": "aloha_dual_arm",
+      "fps": 16.666666666666668,
+      "image_key": "observation.images.cam_high"
+    },
+    {
+      "id": "scan_object",
+      "root": "../data/lerobot/scan_object_pi0_ee",
+      "glob": "data/chunk-*/*.parquet",
+      "format": "lerobot_ee",
+      "robot_id": "aloha_dual_arm",
+      "fps": 16.666666666666668,
+      "image_key": "observation.images.cam_high"
+    },
+    {
+      "id": "shake_bottle",
+      "root": "../data/lerobot/shake_bottle_pi0_ee",
+      "glob": "data/chunk-*/*.parquet",
+      "format": "lerobot_ee",
+      "robot_id": "aloha_dual_arm",
+      "fps": 16.666666666666668,
+      "image_key": "observation.images.cam_high"
+    },
+    {
+      "id": "shake_bottle_horizontally",
+      "root": "../data/lerobot/shake_bottle_horizontally_pi0_ee",
+      "glob": "data/chunk-*/*.parquet",
+      "format": "lerobot_ee",
+      "robot_id": "aloha_dual_arm",
+      "fps": 16.666666666666668,
+      "image_key": "observation.images.cam_high"
+    },
+    {
+      "id": "stack_blocks_three",
+      "root": "../data/lerobot/stack_blocks_three_pi0_ee",
+      "glob": "data/chunk-*/*.parquet",
+      "format": "lerobot_ee",
+      "robot_id": "aloha_dual_arm",
+      "fps": 16.666666666666668,
+      "image_key": "observation.images.cam_high"
+    },
+    {
+      "id": "stack_blocks_two",
+      "root": "../data/lerobot/stack_blocks_two_pi0_ee",
+      "glob": "data/chunk-*/*.parquet",
+      "format": "lerobot_ee",
+      "robot_id": "aloha_dual_arm",
+      "fps": 16.666666666666668,
+      "image_key": "observation.images.cam_high"
+    },
+    {
+      "id": "stack_bowls_three",
+      "root": "../data/lerobot/stack_bowls_three_pi0_ee",
+      "glob": "data/chunk-*/*.parquet",
+      "format": "lerobot_ee",
+      "robot_id": "aloha_dual_arm",
+      "fps": 16.666666666666668,
+      "image_key": "observation.images.cam_high"
+    },
+    {
+      "id": "stack_bowls_two",
+      "root": "../data/lerobot/stack_bowls_two_pi0_ee",
+      "glob": "data/chunk-*/*.parquet",
+      "format": "lerobot_ee",
+      "robot_id": "aloha_dual_arm",
+      "fps": 16.666666666666668,
+      "image_key": "observation.images.cam_high"
+    },
+    {
+      "id": "stamp_seal",
+      "root": "../data/lerobot/stamp_seal_pi0_ee",
+      "glob": "data/chunk-*/*.parquet",
+      "format": "lerobot_ee",
+      "robot_id": "aloha_dual_arm",
+      "fps": 16.666666666666668,
+      "image_key": "observation.images.cam_high"
+    },
+    {
+      "id": "turn_switch",
+      "root": "../data/lerobot/turn_switch_pi0_ee",
+      "glob": "data/chunk-*/*.parquet",
+      "format": "lerobot_ee",
+      "robot_id": "aloha_dual_arm",
+      "fps": 16.666666666666668,
+      "image_key": "observation.images.cam_high"
+    }
+  ],
+  "window": {
+    "length": 50,
+    "stride": 25
+  },
+  "representation": {
+    "mode": "ee",
+    "visual_weight": 0.0
+  },
+  "training": {
+    "epochs": 3,
+    "batch_size": 256,
+    "lr": 0.001,
+    "hidden_dim": 256,
+    "latent_dim": 128,
+    "validation_fraction": 0.2,
+    "stratify_by_dataset": true,
+    "device": "cpu",
+    "threads": 4
+  },
+  "clustering": {
+    "k_values": [
+      16,
+      32,
+      48
+    ],
+    "hdbscan": false,
+    "representatives": 5,
+    "silhouette_sample_size": 2000
+  }
+}

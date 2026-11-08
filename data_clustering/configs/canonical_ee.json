@@ -1,0 +1,18 @@
+{
+  "seed": 42,
+  "output_dir": "../runs/canonical_ee",
+  "datasets": [
+    {
+      "id": "canonical_dataset",
+      "root": "../data/canonical_episodes",
+      "glob": "**/*.npz",
+      "format": "npz",
+      "robot_id": "replace_with_robot_id",
+      "fps": 25
+    }
+  ],
+  "window": {"length": 50, "stride": 25},
+  "representation": {"mode": "ee", "visual_weight": 0.0},
+  "training": {"epochs": 30, "latent_dim": 256, "device": "cpu"},
+  "clustering": {"k_values": [16, 32, 48], "hdbscan": true, "min_cluster_size": 20}
+}
