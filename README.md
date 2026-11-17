@@ -5,6 +5,7 @@
 - `data_clustering/`：动作窗口构造、表示学习、视觉辅助、时间一致性与 K=32 聚类代码。
 - `RoboTwin/`：RoboTwin、π0 末端数据训练、七簇 LoRA、MLP Router、标准 Pi0 baseline 与评测代码。
 - `LoRAHub-JAX/`：历史 LoRA 提取、组合、低秩模块与消融实验代码。
+- [Batch-32 Baseline 服务器准备清单](SERVER_BASELINE_B32.md)：本次100条数据实验所需环境、数据位置、安装、检查、训练、续训与评测命令。
 - [服务器训练与数据搬运文档](RoboTwin/policy/pi0/SERVER_TRAINING.md)：基础权重、数据集、环境以及多卡训练说明。
 - [五任务 100 条 baseline 文档](RoboTwin/policy/pi0_ee_five/BASELINE100.md)：归一化、训练、视频评测和对比说明。
 
