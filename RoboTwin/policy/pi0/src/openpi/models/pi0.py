@@ -17,6 +17,17 @@ import openpi.shared.nnx_utils as nnx_utils
 logger = logging.getLogger("openpi")
 
 
+def topk_router_weights(logits, top_k: int):
+    """Hard Top-K forward routing with dense softmax gradients."""
+    soft_weights = jax.nn.softmax(logits, axis=-1)
+    _, indices = jax.lax.top_k(logits, top_k)
+    selected = jnp.any(
+        jax.nn.one_hot(indices, logits.shape[-1], dtype=jnp.bool_), axis=-2)
+    hard_weights = jax.nn.softmax(
+        jnp.where(selected, logits, jnp.finfo(logits.dtype).min), axis=-1)
+    return soft_weights + jax.lax.stop_gradient(hard_weights - soft_weights)
+
+
 def make_attn_mask(input_mask, mask_ar):
     """Adapted from big_vision.
 
@@ -73,6 +84,14 @@ class Pi0Config(_model.BaseModelConfig):
     action_dim: int = 32
     action_horizon: int = 50
     max_token_len: int = 48
+
+    # Optional routed LoRA bank.  Zero preserves the original Pi0 model exactly.
+    lora_expert_bank_size: int = 0
+    lora_router_top_k: int = 3
+    lora_router_hidden_dim: int = 256
+    lora_router_temperature: float = 1.0
+    lora_router_balance_loss: float = 1e-3
+    lora_residual_scale: float = 1.0
 
     @property
     @override
@@ -138,6 +157,22 @@ class Pi0(_model.BaseModel):
         super().__init__(config.action_dim, config.action_horizon, config.max_token_len)
         paligemma_config = _gemma.get_config(config.paligemma_variant)
         action_expert_config = _gemma.get_config(config.action_expert_variant)
+        if config.lora_expert_bank_size:
+            if not (0 < config.lora_router_top_k <= config.lora_expert_bank_size):
+                raise ValueError("lora_router_top_k must be in [1, lora_expert_bank_size]")
+            if not paligemma_config.lora_configs or not action_expert_config.lora_configs:
+                raise ValueError("Routed LoRA requires LoRA variants for both language and action experts")
+            for gemma_config in (paligemma_config, action_expert_config):
+                gemma_config.lora_configs = {
+                    name: dataclasses.replace(
+                        lora_config,
+                        init_b_fn=jax.nn.initializers.zeros,
+                        expert_bank_size=config.lora_expert_bank_size,
+                        expert_top_k=config.lora_router_top_k,
+                        residual_scale=config.lora_residual_scale,
+                    )
+                    for name, lora_config in gemma_config.lora_configs.items()
+                }
         # TODO: rewrite gemma in NNX. For now, use bridge.
         llm = nnx_bridge.ToNNX(
             _gemma.Module(
@@ -160,6 +195,28 @@ class Pi0(_model.BaseModel):
         self.action_time_mlp_in = nnx.Linear(2 * action_expert_config.width, action_expert_config.width, rngs=rngs)
         self.action_time_mlp_out = nnx.Linear(action_expert_config.width, action_expert_config.width, rngs=rngs)
         self.action_out_proj = nnx.Linear(action_expert_config.width, config.action_dim, rngs=rngs)
+        self.lora_expert_bank_size = config.lora_expert_bank_size
+        self.lora_router_top_k = config.lora_router_top_k
+        self.lora_router_temperature = config.lora_router_temperature
+        self.lora_router_balance_loss = config.lora_router_balance_loss
+        if config.lora_expert_bank_size:
+            self.lora_router_in = nnx.Linear(
+                paligemma_config.width, config.lora_router_hidden_dim, rngs=rngs)
+            self.lora_router_out = nnx.Linear(
+                config.lora_router_hidden_dim, 10 * config.lora_expert_bank_size, rngs=rngs)
+
+    def compute_lora_routing(self, prefix_tokens, prefix_mask):
+        """Return straight-through Top-K weights with shape [batch, 10, experts]."""
+        if not self.lora_expert_bank_size:
+            return None
+        mask = prefix_mask.astype(jnp.float32)[..., None]
+        feature = jnp.sum(prefix_tokens.astype(jnp.float32) * mask, axis=1)
+        feature = feature / jnp.maximum(jnp.sum(mask, axis=1), 1.0)
+        hidden = jax.nn.gelu(self.lora_router_in(feature))
+        logits = self.lora_router_out(hidden).reshape(
+            feature.shape[0], 10, self.lora_expert_bank_size)
+        logits = logits / self.lora_router_temperature
+        return topk_router_weights(logits, self.lora_router_top_k)
 
     @at.typecheck
     def embed_prefix(
@@ -244,6 +301,7 @@ class Pi0(_model.BaseModel):
 
         # one big forward pass of prefix + suffix at once
         prefix_tokens, prefix_mask, prefix_ar_mask = self.embed_prefix(observation)
+        router_weights = self.compute_lora_routing(prefix_tokens, prefix_mask)
         suffix_tokens, suffix_mask, suffix_ar_mask = self.embed_suffix(observation, x_t, time)
         input_mask = jnp.concatenate([prefix_mask, suffix_mask], axis=1)
         ar_mask = jnp.concatenate([prefix_ar_mask, suffix_ar_mask], axis=0)
@@ -251,10 +309,16 @@ class Pi0(_model.BaseModel):
         positions = jnp.cumsum(input_mask, axis=1) - 1
         (prefix_out, suffix_out), _ = self.PaliGemma.llm([prefix_tokens, suffix_tokens],
                                                          mask=attn_mask,
-                                                         positions=positions)
+                                                         positions=positions,
+                                                         router_weights=router_weights)
         v_t = self.action_out_proj(suffix_out[:, -self.action_horizon:])
 
-        return jnp.mean(jnp.square(v_t - u_t), axis=-1)
+        loss = jnp.mean(jnp.square(v_t - u_t), axis=-1)
+        if router_weights is not None and self.lora_router_balance_loss:
+            importance = jnp.mean(router_weights, axis=(0, 1))
+            balance = self.lora_expert_bank_size * jnp.sum(jnp.square(importance)) - 1.0
+            loss = loss + self.lora_router_balance_loss * balance
+        return loss
 
     @override
     def sample_actions(
@@ -273,9 +337,12 @@ class Pi0(_model.BaseModel):
 
         # first fill KV cache with a forward pass of the prefix
         prefix_tokens, prefix_mask, prefix_ar_mask = self.embed_prefix(observation)
+        router_weights = self.compute_lora_routing(prefix_tokens, prefix_mask)
         prefix_attn_mask = make_attn_mask(prefix_mask, prefix_ar_mask)
         positions = jnp.cumsum(prefix_mask, axis=1) - 1
-        _, kv_cache = self.PaliGemma.llm([prefix_tokens, None], mask=prefix_attn_mask, positions=positions)
+        _, kv_cache = self.PaliGemma.llm(
+            [prefix_tokens, None], mask=prefix_attn_mask, positions=positions,
+            router_weights=router_weights)
 
         def step(carry):
             x_t, time = carry
@@ -301,7 +368,8 @@ class Pi0(_model.BaseModel):
             (prefix_out, suffix_out), _ = self.PaliGemma.llm([None, suffix_tokens],
                                                              mask=full_attn_mask,
                                                              positions=positions,
-                                                             kv_cache=kv_cache)
+                                                             kv_cache=kv_cache,
+                                                             router_weights=router_weights)
             assert prefix_out is None
             v_t = self.action_out_proj(suffix_out[:, -self.action_horizon:])
 

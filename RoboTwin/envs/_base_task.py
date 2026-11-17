@@ -1506,9 +1506,14 @@ class Base_Task(gym.Env):
             self.eval_video_ffmpeg.stdin.write(self.now_obs["observation"]["head_camera"]["rgb"].tobytes())
 
         self.take_action_cnt += 1
-        print(f"step: \033[92m{self.take_action_cnt} / {self.step_lim}\033[0m", end="\r")
+        fast_eval_no_render = bool(
+            self.eval_mode and getattr(self, "fast_eval_no_render", False)
+        )
+        if not fast_eval_no_render or self.take_action_cnt % 10 == 0 or self.take_action_cnt == self.step_lim:
+            print(f"step: \033[92m{self.take_action_cnt} / {self.step_lim}\033[0m", end="\r")
 
-        self._update_render()
+        if not fast_eval_no_render:
+            self._update_render()
         if self.render_freq:
             self.viewer.render()
 
@@ -1591,7 +1596,7 @@ class Base_Task(gym.Env):
             if right_n_step == 0:
                 topp_right_flag = False
                 right_n_step = 50  # fixed
-        
+
         elif action_type == 'ee':
 
             left_result = self.robot.left_plan_path(left_arm_actions[0])
@@ -1600,10 +1605,10 @@ class Base_Task(gym.Env):
                 left_n_step = 50
                 topp_left_flag = False
                 # print("left fail")
-            else: 
+            else:
                 left_n_step = left_result["position"].shape[0]
                 topp_left_flag = True
-            
+
             if right_result["status"] != "Success":
                 right_n_step = 50
                 topp_right_flag = False
@@ -1673,8 +1678,9 @@ class Base_Task(gym.Env):
                 now_right_id += 1
 
             self.scene.step()
-            self._update_render()
-                
+            if not fast_eval_no_render:
+                self._update_render()
+
             if self.check_success():
                 self.eval_success = True
                 self.get_obs() # update obs
@@ -1682,7 +1688,8 @@ class Base_Task(gym.Env):
                     self.eval_video_ffmpeg.stdin.write(self.now_obs["observation"]["head_camera"]["rgb"].tobytes())
                 return
 
-        self._update_render()
+        if not fast_eval_no_render:
+            self._update_render()
         if self.render_freq:  # UI
             self.viewer.render()
 
@@ -1705,11 +1712,11 @@ class Base_Task(gym.Env):
         # Create a subdirectory specific to the task
         task_dir = os.path.join(save_dir, task_name)
         os.makedirs(task_dir, exist_ok=True)
-        
+
         # Create a subdirectory for the given generate_num_id
         generate_dir = os.path.join(task_dir, generate_num_id)
         os.makedirs(generate_dir, exist_ok=True)
-        
+
         obs = self.get_obs()
         cam_obs = obs["observation"]
         image_data = {}
@@ -1729,16 +1736,16 @@ class Base_Task(gym.Env):
             rgb = cam_obs[cam_name]["rgb"]
             if rgb.dtype != np.uint8:
                 rgb = (rgb * 255).clip(0, 255).astype(np.uint8)
-            
+
             # Use the instance's ep_num as the episode number
             episode_num = getattr(self, 'ep_num', 0)
-            
+
             # Save image to the subdirectory for the specific generate_num_id
             filename = f"episode{episode_num}_{step_num}_{step_description}.png"
             filepath = os.path.join(generate_dir, filename)
             imageio.imwrite(filepath, rgb)
             image_data[cam_name] = rgb
-            
+
             # print(f"Saving image with episode_num={episode_num}, filename: {filename}, path: {generate_dir}")
-        
+
         return image_data

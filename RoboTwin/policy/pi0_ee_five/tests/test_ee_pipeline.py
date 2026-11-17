@@ -62,6 +62,16 @@ class EETests(unittest.TestCase):
             self.assertEqual(call.args[0].data.repo_id, JOINT_REPO)
             self.assertEqual(call.kwargs['robotwin_repo_id'], JOINT_REPO)
 
+    def test_baseline100_uses_merged_subset_and_matching_hyperparameters(self):
+        settings = read_settings(ROOT / 'baseline100_config.json')
+        cfg = build_config(JOINT, settings, ROOT / 'runs/_test_baseline100')
+        self.assertEqual(cfg.data.repo_id, 'robotwin_five_pi0_ee_subset20_seed42')
+        self.assertEqual(cfg.batch_size, 4)
+        self.assertEqual(cfg.num_train_steps, 5000)
+        self.assertEqual(cfg.lr_schedule.peak_lr, 1e-5)
+        self.assertEqual(settings['warmup_steps'], 500)
+        self.assertEqual(cfg.model.action_horizon, 50)
+
     def test_upstream_optimizer_initialization_shape_with_compat(self):
         setup(read_settings())
         from train_compat import install_train_state_compat

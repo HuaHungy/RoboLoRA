@@ -1,0 +1,303 @@
+{
+  "format": "pi0_topk_routed_lora_bank_v1",
+  "cluster_order": [
+    8,
+    24,
+    3,
+    6,
+    9,
+    31,
+    23
+  ],
+  "num_experts": 7,
+  "source_leaves_per_expert": 20,
+  "source_ab_pairs_per_expert": 10,
+  "transformer_blocks_per_leaf": 18,
+  "router_groups": 10,
+  "top_k": 3,
+  "composition": "sum_k w_k A_k B_k; exactly equivalent to sqrt(w) rank concatenation",
+  "module_paths": [
+    "/home/huahungy/RoboLoRAHub/LoRAHub-JAX/lora_modules/clusters/cluster_08_pi0_ee_lora.npz",
+    "/home/huahungy/RoboLoRAHub/LoRAHub-JAX/lora_modules/clusters/cluster_24_pi0_ee_lora.npz",
+    "/home/huahungy/RoboLoRAHub/LoRAHub-JAX/lora_modules/clusters/cluster_03_pi0_ee_lora.npz",
+    "/home/huahungy/RoboLoRAHub/LoRAHub-JAX/lora_modules/clusters/cluster_06_pi0_ee_lora.npz",
+    "/home/huahungy/RoboLoRAHub/LoRAHub-JAX/lora_modules/clusters/cluster_09_pi0_ee_lora.npz",
+    "/home/huahungy/RoboLoRAHub/LoRAHub-JAX/lora_modules/clusters/cluster_31_pi0_ee_lora.npz",
+    "/home/huahungy/RoboLoRAHub/LoRAHub-JAX/lora_modules/clusters/cluster_23_pi0_ee_lora.npz"
+  ],
+  "checkpoints": {
+    "8": "/home/huahungy/RoboLoRAHub/RoboTwin/policy/pi0_cluster_lora/runs/cluster7_lorahub_e20_b8/checkpoints/cluster_08_pi0_ee_lora/model/1840",
+    "24": "/home/huahungy/RoboLoRAHub/RoboTwin/policy/pi0_cluster_lora/runs/cluster7_lorahub_e20_b8/checkpoints/cluster_24_pi0_ee_lora/model/915",
+    "3": "/home/huahungy/RoboLoRAHub/RoboTwin/policy/pi0_cluster_lora/runs/cluster7_lorahub_e20_b8/checkpoints/cluster_03_pi0_ee_lora/model/2548",
+    "6": "/home/huahungy/RoboLoRAHub/RoboTwin/policy/pi0_cluster_lora/runs/cluster7_lorahub_e20_b8/checkpoints/cluster_06_pi0_ee_lora/model/1008",
+    "9": "/home/huahungy/RoboLoRAHub/RoboTwin/policy/pi0_cluster_lora/runs/cluster7_lorahub_e20_b8/checkpoints/cluster_09_pi0_ee_lora/model/1023",
+    "31": "/home/huahungy/RoboLoRAHub/RoboTwin/policy/pi0_cluster_lora/runs/cluster7_lorahub_e20_b8/checkpoints/cluster_31_pi0_ee_lora/model/883",
+    "23": "/home/huahungy/RoboLoRAHub/RoboTwin/policy/pi0_cluster_lora/runs/cluster7_lorahub_e20_b8/checkpoints/cluster_23_pi0_ee_lora/model/1988"
+  },
+  "source_shapes": {
+    "PaliGemma/llm/layers/attn/attn_vec_einsum/lora_a/value": [
+      18,
+      8,
+      256,
+      16
+    ],
+    "PaliGemma/llm/layers/attn/attn_vec_einsum/lora_b/value": [
+      18,
+      8,
+      16,
+      2048
+    ],
+    "PaliGemma/llm/layers/attn/attn_vec_einsum_1/lora_a/value": [
+      18,
+      8,
+      256,
+      32
+    ],
+    "PaliGemma/llm/layers/attn/attn_vec_einsum_1/lora_b/value": [
+      18,
+      8,
+      32,
+      1024
+    ],
+    "PaliGemma/llm/layers/attn/kv_einsum/lora_a/value": [
+      18,
+      2,
+      1,
+      2048,
+      16
+    ],
+    "PaliGemma/llm/layers/attn/kv_einsum/lora_b/value": [
+      18,
+      2,
+      1,
+      16,
+      256
+    ],
+    "PaliGemma/llm/layers/attn/kv_einsum_1/lora_a/value": [
+      18,
+      2,
+      1,
+      1024,
+      32
+    ],
+    "PaliGemma/llm/layers/attn/kv_einsum_1/lora_b/value": [
+      18,
+      2,
+      1,
+      32,
+      256
+    ],
+    "PaliGemma/llm/layers/attn/q_einsum/lora_a/value": [
+      18,
+      8,
+      2048,
+      16
+    ],
+    "PaliGemma/llm/layers/attn/q_einsum/lora_b/value": [
+      18,
+      8,
+      16,
+      256
+    ],
+    "PaliGemma/llm/layers/attn/q_einsum_1/lora_a/value": [
+      18,
+      8,
+      1024,
+      32
+    ],
+    "PaliGemma/llm/layers/attn/q_einsum_1/lora_b/value": [
+      18,
+      8,
+      32,
+      256
+    ],
+    "PaliGemma/llm/layers/mlp/gating_einsum_lora_a/value": [
+      18,
+      2,
+      2048,
+      16
+    ],
+    "PaliGemma/llm/layers/mlp/gating_einsum_lora_b/value": [
+      18,
+      2,
+      16,
+      16384
+    ],
+    "PaliGemma/llm/layers/mlp/linear_lora_a/value": [
+      18,
+      16384,
+      16
+    ],
+    "PaliGemma/llm/layers/mlp/linear_lora_b/value": [
+      18,
+      16,
+      2048
+    ],
+    "PaliGemma/llm/layers/mlp_1/gating_einsum_lora_a/value": [
+      18,
+      2,
+      1024,
+      32
+    ],
+    "PaliGemma/llm/layers/mlp_1/gating_einsum_lora_b/value": [
+      18,
+      2,
+      32,
+      4096
+    ],
+    "PaliGemma/llm/layers/mlp_1/linear_lora_a/value": [
+      18,
+      4096,
+      32
+    ],
+    "PaliGemma/llm/layers/mlp_1/linear_lora_b/value": [
+      18,
+      32,
+      1024
+    ]
+  },
+  "bank_shapes": {
+    "PaliGemma/llm/layers/attn/attn_vec_einsum/lora_bank_a": [
+      18,
+      7,
+      8,
+      256,
+      16
+    ],
+    "PaliGemma/llm/layers/attn/attn_vec_einsum/lora_bank_b": [
+      18,
+      7,
+      8,
+      16,
+      2048
+    ],
+    "PaliGemma/llm/layers/attn/attn_vec_einsum_1/lora_bank_a": [
+      18,
+      7,
+      8,
+      256,
+      32
+    ],
+    "PaliGemma/llm/layers/attn/attn_vec_einsum_1/lora_bank_b": [
+      18,
+      7,
+      8,
+      32,
+      1024
+    ],
+    "PaliGemma/llm/layers/attn/kv_einsum/lora_bank_a": [
+      18,
+      7,
+      2,
+      1,
+      2048,
+      16
+    ],
+    "PaliGemma/llm/layers/attn/kv_einsum/lora_bank_b": [
+      18,
+      7,
+      2,
+      1,
+      16,
+      256
+    ],
+    "PaliGemma/llm/layers/attn/kv_einsum_1/lora_bank_a": [
+      18,
+      7,
+      2,
+      1,
+      1024,
+      32
+    ],
+    "PaliGemma/llm/layers/attn/kv_einsum_1/lora_bank_b": [
+      18,
+      7,
+      2,
+      1,
+      32,
+      256
+    ],
+    "PaliGemma/llm/layers/attn/q_einsum/lora_bank_a": [
+      18,
+      7,
+      8,
+      2048,
+      16
+    ],
+    "PaliGemma/llm/layers/attn/q_einsum/lora_bank_b": [
+      18,
+      7,
+      8,
+      16,
+      256
+    ],
+    "PaliGemma/llm/layers/attn/q_einsum_1/lora_bank_a": [
+      18,
+      7,
+      8,
+      1024,
+      32
+    ],
+    "PaliGemma/llm/layers/attn/q_einsum_1/lora_bank_b": [
+      18,
+      7,
+      8,
+      32,
+      256
+    ],
+    "PaliGemma/llm/layers/mlp/gating_einsum_lora_bank_a": [
+      18,
+      7,
+      2,
+      2048,
+      16
+    ],
+    "PaliGemma/llm/layers/mlp/gating_einsum_lora_bank_b": [
+      18,
+      7,
+      2,
+      16,
+      16384
+    ],
+    "PaliGemma/llm/layers/mlp/linear_lora_bank_a": [
+      18,
+      7,
+      16384,
+      16
+    ],
+    "PaliGemma/llm/layers/mlp/linear_lora_bank_b": [
+      18,
+      7,
+      16,
+      2048
+    ],
+    "PaliGemma/llm/layers/mlp_1/gating_einsum_lora_bank_a": [
+      18,
+      7,
+      2,
+      1024,
+      32
+    ],
+    "PaliGemma/llm/layers/mlp_1/gating_einsum_lora_bank_b": [
+      18,
+      7,
+      2,
+      32,
+      4096
+    ],
+    "PaliGemma/llm/layers/mlp_1/linear_lora_bank_a": [
+      18,
+      7,
+      4096,
+      32
+    ],
+    "PaliGemma/llm/layers/mlp_1/linear_lora_bank_b": [
+      18,
+      7,
+      32,
+      1024
+    ]
+  },
+  "sha256": "61e95322879d84fcd5441024b181c8ec03e7477dcafd6706beea627f3ef579b0",
+  "bytes": 1399658966
+}

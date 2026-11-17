@@ -1,0 +1,26 @@
+{
+  "_comment": "Frozen LoRAHub-composed Pi0 + tiny KV-conditioned flow residual side network.",
+  "output_dir": "outputs/place_empty_cup_10_v3_pi0_side",
+  "model": {
+    "merged_checkpoint": "outputs/place_empty_cup_10_v3_pi0_aligned_random_20000/checkpoint/10000",
+    "train_config_name": "place_empty_cup_pi0_lora_10ep",
+    "kv_layer_indices": [5, 11, 17],
+    "action_dim": 14,
+    "model_action_dim": 32,
+    "action_horizon": 50
+  },
+  "data": {
+    "data_dir": "data/place_empty_cup_10",
+    "norm_stats_path": "outputs/place_empty_cup_10_v3_pi0_aligned_random_20000/norm_stats.json",
+    "episode_cache_size": 10
+  },
+  "training": {
+    "seed": 42,
+    "batch_size": 32,
+    "epochs": 20,
+    "learning_rate": 0.001,
+    "weight_decay": 0.00001,
+    "checkpoint_interval": 500,
+    "resume": true
+  }
+}

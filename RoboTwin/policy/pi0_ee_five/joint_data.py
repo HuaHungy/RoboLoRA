@@ -6,9 +6,14 @@ from time import monotonic
 from common import JOINT_REPO, TASKS, repo_id
 
 
-def install_joint_dataset():
+def install_joint_dataset(settings=None):
     from openpi.training import data_loader
     from torch.utils.data import ConcatDataset
+
+    # A merged LeRobot repo already contains globally remapped task indices,
+    # so it must go through the ordinary single-repo loader.
+    if (settings or {}).get('joint_repo_id', JOINT_REPO) != JOINT_REPO:
+        return
 
     if getattr(data_loader.create_dataset, '_ee_joint', False):
         return

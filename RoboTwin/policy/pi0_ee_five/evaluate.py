@@ -60,6 +60,7 @@ def run(task, run_dir, episodes, seed, checkpoint_step=None, video=True, restart
         args['eval_video_save_dir'] = destination
     np.random.seed(seed); random.seed(seed)
     env = native.class_decorator(task)
+    env.fast_eval_no_render = not video
     model = get_model({'task_name': task, 'run_dir': str(run_dir), 'checkpoint': str(checkpoint)})
     records, attempted_seeds = [], set()
     active = {'seed': None, 'instruction': None}
@@ -88,7 +89,7 @@ def run(task, run_dir, episodes, seed, checkpoint_step=None, video=True, restart
     env.setup_demo, env.set_instruction, env.close_env = tracked_setup, tracked_instruction, tracked_close
     started = monotonic()
     metadata = {'task': task, 'checkpoint': str(checkpoint), 'requested_episodes': episodes, 'seed': seed,
-                'normalization_asset': repo_id(model_key(settings, task)),
+                'normalization_asset': repo_id(model_key(settings, task), settings),
                 'instruction_type': settings['instruction_type'], 'execute_steps': settings['execute_steps'],
                 'action_horizon': settings['action_horizon'], 'control': 'absolute world EE, xyz+wxyz+gripper, 16D',
                 'protocol': 'native RoboTwin eval_policy, expert-solvable test seeds starting at 100000*(1+seed)'}

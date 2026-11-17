@@ -210,3 +210,17 @@ RoboTwin/policy/pi0_ee_five/runs/ee5_joint_b32_s20000/
 ```
 
 每份 checkpoint 是可恢复的完整模型与优化器，不只是 LoRA adapter。`result.json` 含各任务成功率，汇总在 `evaluation_summary.json`。这些输出和归一化缓存都被 Git 忽略，之后备份时单独搬运。
+
+## 7. 七个聚类专家 LoRA
+
+簇 `8、24、3、6、9、31、23` 使用独立入口，不沿用本文件上面的五任务联合采样和20,000步参数。先搬运 `data_clustering/data/cluster_exports/lambda003_calibrated5_k32_global/`，然后执行：
+
+```bash
+cd /workspace/RoboLoRA/RoboTwin/policy/pi0
+bash server_train_clusters.sh prepare
+bash server_train_clusters.sh check --gpu 0,1,2,3
+bash server_train_clusters.sh train --gpu 0,1,2,3 --fsdp-devices 4 \
+  --run-name cluster7_lora_v1
+```
+
+该入口每个50步窗口只从起点采样一次，为每个簇生成训练划分专用的32维归一化，并依次训练七个独立checkpoint。默认 batch 16、peak LR `1e-5`、约50次数据遍历，具体步数随簇数据量变化。完整参数、覆盖方式、恢复命令和目录结构见 `RoboTwin/policy/pi0_cluster_lora/README.md`。

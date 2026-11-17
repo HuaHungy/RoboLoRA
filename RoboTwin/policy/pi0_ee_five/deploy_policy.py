@@ -39,7 +39,7 @@ class EEPolicy:
         from openpi.policies.policy_config import create_trained_policy
         key = model_key(settings, task)
         cfg = build_config(key, settings, run_dir)
-        self.policy = create_trained_policy(cfg, checkpoint, robotwin_repo_id=repo_id(key),
+        self.policy = create_trained_policy(cfg, checkpoint, robotwin_repo_id=repo_id(key, settings),
                                            sample_kwargs={'num_steps': settings['diffusion_steps']})
         self.execute_steps = settings['execute_steps']
         self.previous_state = None
@@ -63,8 +63,9 @@ def eval(TASK_ENV, model, observation):
         TASK_ENV.take_action(action, action_type='ee')
         # Refresh native video observations and preserve quaternion sign continuity
         # even between the observations used for policy inference.
-        current = TASK_ENV.get_obs()
-        model.previous_state = encode_observation(current, model.previous_state)['state']
+        if getattr(TASK_ENV, 'eval_video_path', None) is not None:
+            current = TASK_ENV.get_obs()
+            model.previous_state = encode_observation(current, model.previous_state)['state']
 
 
 def reset_model(model):

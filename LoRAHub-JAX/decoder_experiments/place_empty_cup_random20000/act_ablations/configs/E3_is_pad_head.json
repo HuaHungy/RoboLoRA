@@ -1,0 +1,29 @@
+{
+  "experiment_id": "E3_is_pad_head",
+  "description": "Only add a supervised is_pad auxiliary head; action loss remains the baseline",
+  "output_dir": "decoder_experiments/place_empty_cup_random20000/act_ablations/artifacts/E3_is_pad_head",
+  "backbone": {
+    "merged_checkpoint": "outputs/place_empty_cup_10_v3_pi0_aligned_random_20000/checkpoint/10000",
+    "train_config_name": "place_empty_cup_pi0_lora_10ep",
+    "feature_source": "prefix_hidden", "frozen": true
+  },
+  "decoder": {
+    "type": "act", "action_dim": 14, "action_horizon": 50, "state_dim": 32,
+    "model_dim": 256, "heads": 4, "layers": 4, "ff_dim": 1024,
+    "separate_query_pos": false, "predict_is_pad": true, "use_cvae": false
+  },
+  "data": {
+    "data_dir": "data/place_empty_cup_10",
+    "norm_stats_path": "outputs/place_empty_cup_10_v3_pi0_aligned_random_20000/norm_stats.json",
+    "validation_episodes": [8, 9], "episode_cache_size": 10
+  },
+  "training": {
+    "seed": 42, "batch_size": 2, "epochs": 30, "learning_rate": 0.0001,
+    "weight_decay": 0.00001, "gradient_clip": 1.0, "gripper_weight": 2.0,
+    "smooth_weight": 0.05, "jerk_weight": 0.01,
+    "reconstruction_loss": "weighted_mse", "use_action_valid_mask": false,
+    "pad_loss_weight": 0.1, "ema_decay": 0.999,
+    "checkpoint_every_epochs": 15, "resume": true
+  },
+  "deployment": {"checkpoint": "best.pkl", "action_steps": 5, "temporal_aggregation": false}
+}

@@ -101,6 +101,131 @@ def prepare_task(task, settings, check_loader=True):
     return provenance
 
 
+def prepare_merged_joint(settings):
+    """Validate and normalize one pre-merged five-task LeRobot repository."""
+    setup(settings)
+    from openpi.shared import normalize
+    from openpi.training import data_loader
+
+    asset_id = repo_id(JOINT, settings)
+    root = Path(settings['dataset_root']) / asset_id
+    info_path = root / 'meta/info.json'
+    manifest_path = root / 'meta/merge_manifest.json'
+    if not info_path.is_file() or not manifest_path.is_file():
+        raise FileNotFoundError(f'Merged baseline dataset metadata is missing under {root}')
+    info = json.loads(info_path.read_text())
+    manifest = json.loads(manifest_path.read_text())
+    selected = manifest.get('specification', {}).get('selected_source_episodes', {})
+    if (manifest.get('status') != 'complete' or set(selected) != set(TASKS)
+            or any(len(selected[task]) != 20 for task in TASKS)):
+        raise ValueError('Baseline dataset must contain the recorded 20 episodes for each of the five tasks')
+    files = sorted(root.glob('data/chunk-*/*.parquet'))
+    if info.get('total_episodes') != 100 or manifest.get('total_episodes') != 100 or len(files) != 100:
+        raise ValueError('Baseline dataset must contain exactly 100 episodes')
+
+    sums = {key: np.zeros(32, np.float64) for key in ('state', 'actions')}
+    squares = {key: np.zeros(32, np.float64) for key in sums}
+    counts = {key: 0 for key in sums}
+    fingerprint = hashlib.sha256(manifest_path.read_bytes())
+    total = 0
+    expected_images = {
+        'observation.images.' + camera
+        for camera in ('cam_high', 'cam_left_wrist', 'cam_right_wrist')
+    }
+    for path in files:
+        parquet = pq.ParquetFile(path)
+        if not expected_images.issubset(parquet.schema_arrow.names):
+            raise ValueError(f'{path}: three embedded camera columns are required')
+        table = parquet.read(columns=['observation.state', 'action'])
+        state = np.asarray(table['observation.state'].to_pylist(), dtype=np.float64)
+        action = np.asarray(table['action'].to_pylist(), dtype=np.float64)
+        if state.ndim != 2 or state.shape[1] != 16 or state.shape != action.shape or len(state) == 0:
+            raise ValueError(f'{path}: expected nonempty [T,16] state/action')
+        np.testing.assert_allclose(action[:-1], state[1:], atol=1e-6, rtol=0)
+        for values in (state, action):
+            if (not np.isfinite(values).all() or np.any(values[:, [7, 15]] < 0)
+                    or np.any(values[:, [7, 15]] > 1)):
+                raise ValueError(f'{path}: non-finite values or invalid grippers')
+            for offset in (3, 11):
+                np.testing.assert_allclose(
+                    np.linalg.norm(values[:, offset:offset + 4], axis=1), 1, atol=1e-5)
+        for key, values, weights in (
+                ('state', state, np.ones(len(state))),
+                ('actions', action, action_weights(len(action), settings['action_horizon']))):
+            sums[key][:16] += (values * weights[:, None]).sum(axis=0)
+            squares[key][:16] += (values ** 2 * weights[:, None]).sum(axis=0)
+            counts[key] += int(weights.sum())
+        fingerprint.update(state.tobytes())
+        fingerprint.update(action.tobytes())
+        total += len(state)
+    if total != info.get('total_frames') or total != manifest.get('total_frames'):
+        raise ValueError('Merged dataset frame count differs from metadata')
+
+    stats = {}
+    for key in sums:
+        mean = sums[key] / counts[key]
+        std = np.sqrt(np.maximum(0, squares[key] / counts[key] - mean ** 2))
+        stats[key] = normalize.NormStats(mean=mean, std=std)
+    cfg = build_config(JOINT, settings, HERE / 'runs/_preparation_only')
+    destination = cfg.assets_dirs / asset_id
+    provenance = {
+        'training_mode': 'joint_merged_subset',
+        'repo_id': asset_id,
+        'tasks': list(TASKS),
+        'episodes_per_task': 20,
+        'episodes': len(files),
+        'frames': total,
+        'sampling_seed': manifest['specification']['sampling_seed'],
+        'selected_source_episodes': selected,
+        'data_sha256': fingerprint.hexdigest(),
+        'action_horizon': settings['action_horizon'],
+        'normalization': 'shared population z-score over the 100 episodes; exact repeat-last action-window weighting',
+        'state_count': counts['state'],
+        'action_count': counts['actions'],
+        'coordinate_frame': 'world; xyz+wxyz+gripper; 16D',
+    }
+    norm_path = destination / 'norm_stats.json'
+    if norm_path.is_file():
+        previous = json.loads((destination / 'provenance.json').read_text())
+        if previous != provenance:
+            raise ValueError('Baseline100 normalization source changed; preserve the old assets first')
+        saved = normalize.load(destination)
+        for key in stats:
+            np.testing.assert_allclose(saved[key].mean, stats[key].mean, atol=1e-10)
+            np.testing.assert_allclose(saved[key].std, stats[key].std, atol=1e-10)
+    else:
+        normalize.save(destination, stats)
+        write_json(destination / 'provenance.json', provenance)
+
+    loader = data_loader.create_data_loader(cfg, num_batches=1, num_workers=0, shuffle=False)
+    observation, actions = next(iter(loader))
+    assert observation.state.shape == (settings['batch_size'], 32)
+    assert actions.shape == (settings['batch_size'], settings['action_horizon'], 32)
+    assert all(image.shape == (settings['batch_size'], 224, 224, 3) for image in observation.images.values())
+    assert np.asarray(observation.tokenized_prompt_mask).any()
+    assert np.isfinite(np.asarray(actions)).all()
+    report = {
+        **provenance,
+        'batch_size': settings['batch_size'],
+        'optimizer_steps': settings['num_train_steps'],
+        'equivalent_frame_passes': settings['num_train_steps'] * settings['batch_size'] / total,
+        'loader_check': {
+            'state': list(observation.state.shape),
+            'actions': list(actions.shape),
+            'three_camera_images': [settings['batch_size'], 224, 224, 3],
+            'language_tokenized': True,
+        },
+        'training_started': False,
+    }
+    write_json(HERE / 'reports/baseline100_preparation.json', report)
+    print(
+        f"Baseline100 PASS: 5x20={len(files)} episodes, {total} frames; "
+        f"shared 32D normalization and loader checked; batch={settings['batch_size']}",
+        flush=True,
+    )
+    return report
+
+
 def prepare_joint(settings):
     from openpi.shared import normalize
     from openpi.training import data_loader
@@ -108,12 +233,12 @@ def prepare_joint(settings):
 
     reports = [prepare_task(task, settings, check_loader=False) for task in TASKS]
     cfg = build_config(JOINT, settings, HERE / 'runs/_preparation_only')
-    sources = [normalize.load(build_config(task, settings, HERE / 'runs/_preparation_only').assets_dirs / repo_id(task))
+    sources = [normalize.load(build_config(task, settings, HERE / 'runs/_preparation_only').assets_dirs / repo_id(task, settings))
                for task in TASKS]
     stats = {key: pooled_stats([(report[count_key], source[key].mean, source[key].std)
                                for report, source in zip(reports, sources, strict=True)])
              for key, count_key in [('state', 'state_count'), ('actions', 'action_count')]}
-    destination = cfg.assets_dirs / JOINT_REPO
+    destination = cfg.assets_dirs / repo_id(JOINT, settings)
     provenance = {'training_mode': 'joint', 'tasks': list(TASKS),
                   'episodes': sum(r['episodes'] for r in reports), 'frames': sum(r['frames'] for r in reports),
                   'action_horizon': settings['action_horizon'],
@@ -132,7 +257,7 @@ def prepare_joint(settings):
         normalize.save(destination, stats)
         write_json(destination / 'provenance.json', provenance)
 
-    install_joint_dataset()
+    install_joint_dataset(settings)
     data_config = cfg.data.create(cfg.assets_dirs, cfg.model)
     dataset = data_loader.create_dataset(data_config, cfg.model)
     assert len(dataset) == provenance['frames']
@@ -198,7 +323,10 @@ if __name__ == '__main__':
     if not (Path(settings['pretrained_params']) / '_METADATA').is_file():
         raise FileNotFoundError('The local pi0_base parameter checkpoint is missing')
     if settings.get('training_mode') == 'joint':
-        prepare_joint(settings)
+        if settings.get('joint_repo_id', JOINT_REPO) == JOINT_REPO:
+            prepare_joint(settings)
+        else:
+            prepare_merged_joint(settings)
     else:
         reports = [prepare_task(task, settings) for task in args.tasks]
         write_json(HERE / 'reports/preparation.json', {'training_started': False, 'tasks': reports})

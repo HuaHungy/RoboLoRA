@@ -1,0 +1,2 @@
+decoder	status	config	train_log	eval_log
+ACT	ok	/home/huahungy/RoboLoRAHub/LoRAHub-JAX/decoder_experiments/place_empty_cup_random20000/configs/ACT_direct.json	/home/huahungy/RoboLoRAHub/LoRAHub-JAX/decoder_experiments/place_empty_cup_random20000/logs/ACT_train_20261008_142214.log	/home/huahungy/RoboLoRAHub/LoRAHub-JAX/decoder_experiments/place_empty_cup_random20000/logs/ACT_eval_20261008_142214.log

@@ -1,0 +1,12 @@
+# 软链接与外部挂载 (不上传)
+data
+openpi_base
+checkpoints_RoboTwin
+
+# 运行产物 (checkpoint / 权重 / 日志 / 统计)
+outputs
+lora_modules
+
+# Python 缓存
+__pycache__/
+*.pyc

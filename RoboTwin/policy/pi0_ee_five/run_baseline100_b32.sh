@@ -1,0 +1,40 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROOT="$(cd "$HERE/../../.." && pwd)"
+RUN_NAME="${RUN_NAME:-pi0_baseline100_b32_s5000}"
+GPU_IDS="${GPU_IDS:-0,1,2,3}"
+
+IFS=',' read -r -a GPU_ARRAY <<< "$GPU_IDS"
+FSDP_DEVICES="${FSDP_DEVICES:-${#GPU_ARRAY[@]}}"
+
+for argument in "$@"; do
+  if [[ "$argument" == "-h" || "$argument" == "--help" ]]; then
+    exec bash "$HERE/run.sh" all \
+      --config "$HERE/baseline100_config.json" \
+      --run-name "$RUN_NAME" \
+      --gpu "$GPU_IDS" \
+      "$@"
+  fi
+done
+
+bash "$HERE/run.sh" all \
+  --config "$HERE/baseline100_config.json" \
+  --run-name "$RUN_NAME" \
+  --gpu "$GPU_IDS" \
+  --batch-size 32 \
+  --fsdp-devices "$FSDP_DEVICES" \
+  --train-steps 5000 \
+  --save-interval 1000 \
+  --eval-episodes 20 \
+  --eval-seed 0 \
+  "$@"
+
+"$HERE/../pi0/.venv/bin/python" "$HERE/compare_baseline_router.py" \
+  --baseline-run "$HERE/runs/$RUN_NAME" \
+  --router-run "$ROOT/RoboTwin/policy/pi0_cluster_router/runs/cluster7_top3_router_b4_s5000" \
+  --baseline-step 5000 \
+  --router-step 5000 \
+  --episodes 20 \
+  --seed 0

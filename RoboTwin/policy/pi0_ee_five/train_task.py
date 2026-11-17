@@ -20,14 +20,14 @@ def main():
     setup(settings)
     from joint_data import install_joint_dataset
     from train_compat import install_train_state_compat
-    install_joint_dataset()
+    install_joint_dataset(settings)
     install_train_state_compat()
     import jax
     if not any(device.platform == 'gpu' for device in jax.devices()):
         raise RuntimeError('GPU is unavailable in JAX; refusing to start full pi0 training on CPU')
     logging.basicConfig(level=logging.INFO)
     cfg = build_config(args.task, settings, args.run_dir, args.resume)
-    norm_path = cfg.assets_dirs / repo_id(args.task) / 'norm_stats.json'
+    norm_path = cfg.assets_dirs / repo_id(args.task, settings) / 'norm_stats.json'
     if not norm_path.is_file():
         raise FileNotFoundError(f'Missing EE normalization: {norm_path}; run prepare first')
     print(f'Task={args.task}, batch_size={cfg.batch_size}, steps={cfg.num_train_steps}, '

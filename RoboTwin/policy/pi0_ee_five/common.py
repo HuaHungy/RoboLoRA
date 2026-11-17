@@ -18,8 +18,10 @@ def model_key(settings, task):
     return JOINT if settings.get('training_mode') == 'joint' else task
 
 
-def repo_id(task):
-    return JOINT_REPO if task == JOINT else f'{task}_pi0_ee'
+def repo_id(task, settings=None):
+    if task == JOINT:
+        return (settings or {}).get('joint_repo_id', JOINT_REPO)
+    return f'{task}_pi0_ee'
 
 
 def read_settings(path=None):
@@ -70,7 +72,7 @@ def build_config(task, settings, run_dir, resume=False):
     freeze = nnx.Any(model.get_freeze_filter(), PathRegex('.*PaliGemma/img/.*'))
     return TrainConfig(
         name=config_name(task), exp_name='model', project_name='robotwin_pi0_ee_five', model=model,
-        data=LeRobotRoboTwinEEDataConfig(repo_id=repo_id(task), base_config=DataConfig(local_files_only=True)),
+        data=LeRobotRoboTwinEEDataConfig(repo_id=repo_id(task, settings), base_config=DataConfig(local_files_only=True)),
         freeze_filter=freeze, ema_decay=None, batch_size=settings['batch_size'],
         num_workers=settings['num_workers'], num_train_steps=settings['num_train_steps'],
         weight_loader=CheckpointWeightLoader(settings['pretrained_params']),
@@ -100,13 +102,16 @@ def write_json(path, value):
     temporary.replace(path)
 
 
-def latest_checkpoint(run_dir, task, step=None):
+def latest_checkpoint(run_dir, task, step=None, settings=None):
+    if settings is None and (Path(run_dir) / 'run_config.json').is_file():
+        settings = json.loads((Path(run_dir) / 'run_config.json').read_text())
+    asset_id = repo_id(task, settings)
     root = Path(run_dir) / 'checkpoints' / config_name(task) / 'model'
     candidates = [root / str(step)] if step is not None else sorted(
         (p for p in root.glob('*') if p.is_dir() and p.name.isdigit()), key=lambda p: int(p.name), reverse=True)
     for path in candidates:
         if ((path / '_CHECKPOINT_METADATA').is_file() and (path / 'params').is_dir()
                 and (path / 'train_state').is_dir()
-                and (path / 'assets' / repo_id(task) / 'norm_stats.json').is_file()):
+                and (path / 'assets' / asset_id / 'norm_stats.json').is_file()):
             return path
     raise FileNotFoundError(f'No committed checkpoint with EE normalization assets under {root}')

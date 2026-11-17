@@ -1,0 +1,25 @@
+{
+  "clusters": [8, 24, 3, 6, 9, 31, 23],
+  "dataset_root": "../../../data_clustering/data/cluster_exports/lambda003_calibrated5_k32_global",
+  "pretrained_params": "../../../transfer/openpi/openpi-assets/checkpoints/pi0_base/params",
+  "assets_root": "assets",
+  "batch_size": 16,
+  "cluster_train_steps": {
+    "8": 2300,
+    "24": 1200,
+    "3": 3200,
+    "6": 1300,
+    "9": 1300,
+    "31": 1100,
+    "23": 2500
+  },
+  "save_interval": 500,
+  "keep_period": null,
+  "fsdp_devices": 1,
+  "num_workers": 2,
+  "seed": 42,
+  "peak_lr": 0.00001,
+  "warmup_steps": 100,
+  "action_horizon": 50,
+  "log_interval": 50
+}

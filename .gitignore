@@ -46,3 +46,42 @@
 *.ckpt
 *.zip
 *.tar.gz
+
+# Generated products shared by all three projects.
+**/runs/
+**/logs/
+**/reports/
+**/evaluations/
+**/eval_result/
+**/eval_video/
+**/artifacts/
+**/outputs/
+**/lora_modules/
+
+# LoRAHub-JAX local mounts and model products.
+/LoRAHub-JAX/data
+/LoRAHub-JAX/openpi_base
+/LoRAHub-JAX/checkpoints_RoboTwin
+/LoRAHub-JAX/.cache/
+
+# Array dumps, videos, and additional model formats.
+*.npy
+*.npz
+*.onnx
+*.bin
+*.mp4
+*.avi
+*.mkv
+*.webm
+*.mov
+*.tar
+*.tgz
+*.7z
+*.rar
+
+*.pkl
+*.pickle
+**/summary.csv
+**/summary.md
+/LoRAHub-JAX/multitask_ablation/RIGHT_ARM_50_REPORT.md
+/LoRAHub-JAX/multitask_ablation/right_arm_50_selection.json

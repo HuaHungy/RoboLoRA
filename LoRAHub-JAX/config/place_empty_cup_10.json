@@ -1,0 +1,20 @@
+{
+  "_comment": "LoRAHub 任务配置示例。所有相对路径均基于项目根目录 (LoRAHub-JAX/) 解析。",
+  "task_name": "place_empty_cup_10",
+  "target_task": "place_empty_cup",
+  "train_config_name": "place_empty_cup_pi0_lora",
+  "data_dir": "data/place_empty_cup_10",
+  "lora_modules": [],
+  "norm_stats_path": "outputs/place_empty_cup_10/norm_stats.json",
+  "diffusion_steps": 10,
+  "algorithm": {
+    "version": "v3",
+    "max_steps": 100,
+    "seed": 42,
+    "weight_bounds": [1e-6, 1.5]
+  },
+  "compose": {
+    "asset_id": "place_empty_cup_pi0",
+    "sync_dir": "../RoboTwin/policy/pi0/checkpoints/place_empty_cup_pi0_lora_10ep/place_empty_cup_pi0_lora_10ep"
+  }
+}

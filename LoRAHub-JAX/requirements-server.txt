@@ -1,0 +1,52 @@
+# LoRAHub-JAX + Pi0 黑盒组合训练服务器依赖
+# 已按本地可运行环境固定版本：Python 3.11、JAX/CUDA 12。
+# 安装命令见 SERVER_SETUP_AND_TRAINING.md。
+
+# LoRAHub 搜索、数据与日志
+numpy==1.26.4
+scipy==1.17.1
+pandas==2.3.3
+pyarrow==25.0.0
+Pillow==12.3.0
+matplotlib==3.11.1
+nevergrad==1.0.12
+tqdm==4.70.0
+
+# Pi0 / JAX 运行时。cuda12 extra 会安装匹配的 JAX CUDA 插件与运行库。
+jax[cuda12]==0.5.0
+flax==0.10.2
+orbax-checkpoint==0.11.1
+tensorstore==0.1.74
+optax==0.2.5
+chex==0.1.90
+equinox==0.13.8
+augmax==0.4.1
+einops==0.8.2
+jaxtyping==0.2.36
+beartype==0.22.9
+ml-collections==1.0.0
+etils[epath]==1.14.0
+dm-tree==0.1.8
+treescope==0.1.10
+flatbuffers==25.12.19
+
+# Pi0 tokenizer 与远程资源缓存
+sentencepiece==0.2.2
+transformers==4.48.1
+fsspec==2026.6.0
+gcsfs==2026.7.0
+boto3==1.43.46
+botocore==1.43.46
+s3transfer==0.19.2
+filelock==3.32.0
+tqdm-loggable==0.4.1
+types-boto3-s3==1.43.50
+
+# OpenPI 配置/类型与本地 openpi-client
+numpydantic==1.8.1
+pydantic==2.13.4
+typing-extensions==4.16.0
+msgpack==1.2.1
+tree==0.2.4
+websockets==16.1.1
+-e ../RoboTwin/policy/pi0/packages/openpi-client

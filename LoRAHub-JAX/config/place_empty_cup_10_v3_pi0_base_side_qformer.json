@@ -1,0 +1,33 @@
+{
+  "_comment": "Frozen official full Pi0 base + lightweight token-level KV Q-Former residual side network.",
+  "output_dir": "outputs/place_empty_cup_10_v3_pi0_base_side_qformer",
+  "model": {
+    "side_architecture": "qformer",
+    "merged_checkpoint": "openpi_base/pi0_base",
+    "train_config_name": "pi0_base_aloha_robotwin_full",
+    "kv_layer_indices": [5, 11, 17],
+    "action_dim": 14,
+    "model_action_dim": 32,
+    "action_horizon": 50,
+    "residual_scale": 0.1,
+    "qformer_num_queries": 50,
+    "qformer_dim": 128,
+    "qformer_heads": 4,
+    "qformer_layers": 2,
+    "qformer_ff_dim": 256
+  },
+  "data": {
+    "data_dir": "data/place_empty_cup_10",
+    "norm_stats_path": "outputs/place_empty_cup_10_v3_pi0_aligned_random_20000/norm_stats.json",
+    "episode_cache_size": 10
+  },
+  "training": {
+    "seed": 42,
+    "batch_size": 32,
+    "epochs": 20,
+    "learning_rate": 0.001,
+    "weight_decay": 0.00001,
+    "checkpoint_interval": 500,
+    "resume": false
+  }
+}

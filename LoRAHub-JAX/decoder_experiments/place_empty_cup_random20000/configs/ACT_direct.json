@@ -1,0 +1,45 @@
+{
+  "experiment_id": "ACT",
+  "description": "Frozen LoRAHub prefix encoder plus a direct ACT action decoder",
+  "output_dir": "decoder_experiments/place_empty_cup_random20000/artifacts/ACT_direct",
+  "backbone": {
+    "merged_checkpoint": "outputs/place_empty_cup_10_v3_pi0_aligned_random_20000/checkpoint/10000",
+    "train_config_name": "place_empty_cup_pi0_lora_10ep",
+    "feature_source": "prefix_hidden",
+    "frozen": true
+  },
+  "decoder": {
+    "type": "act",
+    "action_dim": 14,
+    "action_horizon": 50,
+    "state_dim": 32,
+    "model_dim": 256,
+    "heads": 4,
+    "layers": 4,
+    "ff_dim": 1024
+  },
+  "data": {
+    "data_dir": "data/place_empty_cup_10",
+    "norm_stats_path": "outputs/place_empty_cup_10_v3_pi0_aligned_random_20000/norm_stats.json",
+    "validation_episodes": [8, 9],
+    "episode_cache_size": 10
+  },
+  "training": {
+    "seed": 42,
+    "batch_size": 2,
+    "epochs": 30,
+    "learning_rate": 0.0001,
+    "weight_decay": 0.00001,
+    "gradient_clip": 1.0,
+    "gripper_weight": 2.0,
+    "smooth_weight": 0.05,
+    "jerk_weight": 0.01,
+    "ema_decay": 0.999,
+    "checkpoint_every_epochs": 5,
+    "resume": true
+  },
+  "deployment": {
+    "checkpoint": "best.pkl",
+    "action_steps": 5
+  }
+}

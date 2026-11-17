@@ -1,4 +1,4 @@
-export WANDB_API_KEY=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
+: "${WANDB_API_KEY:?Set WANDB_API_KEY in the environment}"
 # bash finetune.sh place_can_basket_RDT
 # bash finetune.sh place_bread_skillet_RDT
 bash finetune.sh adjust_bottle_RDT

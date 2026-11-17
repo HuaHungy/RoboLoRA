@@ -158,7 +158,7 @@ class Attention(nn.Module):
     configs: Sequence[Config]
 
     @nn.compact
-    def __call__(self, xs, positions, attn_mask, kv_cache):
+    def __call__(self, xs, positions, attn_mask, kv_cache, router_weights=None):
         # all experts must share the same head dim, num heads, and num kv heads for self-attention to work
         assert all(config.head_dim == self.configs[0].head_dim for config in self.configs)
         assert all(config.num_heads == self.configs[0].num_heads for config in self.configs)
@@ -185,14 +185,20 @@ class Attention(nn.Module):
                     init_fn=nn.initializers.lecun_normal(in_axis=-2, out_axis=-1, batch_axis=(0, )),
                     lora_config=config.lora_configs.get("attn"),
                 )
-                q = q_einsum("BTD,NDH->BTNH", x)
+                q = q_einsum(
+                    "BTD,NDH->BTNH", x,
+                    None if router_weights is None else router_weights[:, i],
+                )
                 kv_einsum = lora.Einsum(
                     shape=(2, config.num_kv_heads, config.width, config.head_dim),
                     name=_name("kv_einsum", i),
                     init_fn=nn.initializers.lecun_normal(in_axis=-2, out_axis=-1, batch_axis=(0, 1)),
                     lora_config=config.lora_configs.get("attn"),
                 )
-                k, v = kv_einsum("BSD,2KDH->2BSKH", x)
+                k, v = kv_einsum(
+                    "BSD,2KDH->2BSKH", x,
+                    None if router_weights is None else router_weights[:, 2 + i],
+                )
                 qkvs.append((q, k, v))
 
         q, k, v = (jnp.concatenate(y, axis=1) for y in zip(*qkvs, strict=True))
@@ -237,7 +243,10 @@ class Attention(nn.Module):
                     init_fn=nn.initializers.lecun_normal(in_axis=(-3, -2), out_axis=-1),
                     lora_config=config.lora_configs.get("attn"),
                 )
-                out.append(out_einsum("BTNH,NHD->BTD", encoded[:, start:end]))
+                out.append(out_einsum(
+                    "BTNH,NHD->BTD", encoded[:, start:end],
+                    None if router_weights is None else router_weights[:, 4 + i],
+                ))
                 start = end
             else:
                 out.append(None)
@@ -286,7 +295,8 @@ class Block(nn.Module):
     dropout_bdims: tuple[int, ...] = ()
 
     @nn.compact
-    def __call__(self, xs, kv_cache, positions, attn_mask, decode, deterministic=True):  # noqa: FBT002
+    def __call__(self, xs, kv_cache, positions, attn_mask, decode,
+                 router_weights=None, deterministic=True):  # noqa: FBT002
         xs = sharding.activation_sharding_constraint(xs)
         drop = nn.Dropout(self.dropout, self.dropout_bdims) if self.dropout else lambda x, _: x
 
@@ -299,7 +309,7 @@ class Block(nn.Module):
             pre_attn.append(x)
 
         pre_attn = sharding.activation_sharding_constraint(pre_attn)
-        post_attn, kv_cache = attn(pre_attn, positions, attn_mask, kv_cache)
+        post_attn, kv_cache = attn(pre_attn, positions, attn_mask, kv_cache, router_weights)
         post_attn = jax.tree.map(lambda x: drop(x, deterministic), post_attn)
         post_attn = sharding.activation_sharding_constraint(post_attn)
         xs = jax.tree.map(lambda x, y: x + y, xs, post_attn)
@@ -309,12 +319,16 @@ class Block(nn.Module):
         for i, (x, config) in enumerate(zip(xs, self.configs, strict=True)):
             if x is not None:
                 x = RMSNorm(name=_name("pre_ffw_norm", i))(x)  # noqa: PLW2901
+                routing = None
+                if router_weights is not None:
+                    routing = (router_weights[:, 6 if i == 0 else 8],
+                               router_weights[:, 7 if i == 0 else 9])
                 x = lora.FeedForward(  # noqa: PLW2901
                     features=config.width,
                     hidden_dim=config.mlp_dim,
                     name=_name("mlp", i),
                     lora_config=config.lora_configs.get("ffn"),
-                )(x)
+                )(x, routing)
             out.append(x)
 
         out = sharding.activation_sharding_constraint(out)
@@ -351,7 +365,7 @@ class Module(nn.Module):
         block_cls = nn.remat(
             Block,
             prevent_cse=False,
-            static_argnums=(5, ),  # 0=self, 5=deterministic
+            static_argnums=(6, ),  # 0=xs, 6=deterministic
             policy=jax.checkpoint_policies.nothing_saveable,
         )
         self.layers = nn.scan(
@@ -361,7 +375,7 @@ class Module(nn.Module):
                 "params": True,
                 "dropout": True
             },
-            in_axes=(0, nn.broadcast, nn.broadcast, nn.broadcast),  # 0=kv_cache, 1=positions, 2=mask, 3=decode
+            in_axes=(0, nn.broadcast, nn.broadcast, nn.broadcast, nn.broadcast),
             length=self.configs[0].depth,
         )(
             configs=self.configs,
@@ -384,11 +398,13 @@ class Module(nn.Module):
         *,
         kv_cache: KVCache | None = None,
         deterministic: bool = True,
+        router_weights=None,
     ) -> tuple[Sequence[at.Float[at.Array, "b _t _d"] | None], KVCache]:
         embedded = jax.tree.map(lambda e: e.astype(self.embed_dtype), embedded)
         mask = jnp.asarray(mask)[:, None, :, :]
 
-        embedded, kv_cache = self.layers(embedded, kv_cache, positions, mask, deterministic)
+        embedded, kv_cache = self.layers(
+            embedded, kv_cache, positions, mask, deterministic, router_weights)
 
         assert all(e.dtype == jnp.dtype(self.embed_dtype) for e in embedded if e is not None)
 
