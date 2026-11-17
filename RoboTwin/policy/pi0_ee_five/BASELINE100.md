@@ -36,7 +36,9 @@ GPU_IDS=0,1,2,3 FSDP_DEVICES=4 \
 
 This writes to `runs/pi0_baseline100_b32_s5000`, so it cannot overwrite the
 batch-4 experiment. The global batch must be divisible by the number of GPUs,
-and `FSDP_DEVICES` must divide the number of GPUs.
+and `FSDP_DEVICES` must divide the number of GPUs. If the historical Router run
+is not present on the server, training and evaluation still finish normally and
+the final comparison step is skipped.
 
 The existing routed checkpoint used all five 50-episode sources (250 episodes),
 whereas this requested baseline uses 100 episodes. The generated comparison

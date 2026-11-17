@@ -31,10 +31,15 @@ bash "$HERE/run.sh" all \
   --eval-seed 0 \
   "$@"
 
-"$HERE/../pi0/.venv/bin/python" "$HERE/compare_baseline_router.py" \
-  --baseline-run "$HERE/runs/$RUN_NAME" \
-  --router-run "$ROOT/RoboTwin/policy/pi0_cluster_router/runs/cluster7_top3_router_b4_s5000" \
-  --baseline-step 5000 \
-  --router-step 5000 \
-  --episodes 20 \
-  --seed 0
+ROUTER_RUN="$ROOT/RoboTwin/policy/pi0_cluster_router/runs/cluster7_top3_router_b4_s5000"
+if [[ -d "$ROUTER_RUN" ]]; then
+  "$HERE/../pi0/.venv/bin/python" "$HERE/compare_baseline_router.py" \
+    --baseline-run "$HERE/runs/$RUN_NAME" \
+    --router-run "$ROUTER_RUN" \
+    --baseline-step 5000 \
+    --router-step 5000 \
+    --episodes 20 \
+    --seed 0
+else
+  echo "Router run not found; baseline training/evaluation completed, comparison skipped: $ROUTER_RUN"
+fi
