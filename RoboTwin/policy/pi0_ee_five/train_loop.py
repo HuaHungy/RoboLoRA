@@ -48,26 +48,35 @@ def main(trainer, config):
         step_fn = jax.jit(functools.partial(trainer.train_step, config),
                           in_shardings=(replicated, state_sharding, data_sharding),
                           out_shardings=(state_sharding, replicated), donate_argnums=(1,))
-        start = int(state.step)
-        progress = tqdm.tqdm(range(start, config.num_train_steps), initial=start,
-                             total=config.num_train_steps, dynamic_ncols=True)
+        accumulation_steps = getattr(config, 'policy_metadata', {}).get('gradient_accumulation_steps', 1)
+        micro_step_start = int(state.step)
+        if micro_step_start % accumulation_steps:
+            raise RuntimeError('Checkpoint was saved in the middle of a gradient accumulation cycle')
+        start = micro_step_start // accumulation_steps
+        total_micro_steps = config.num_train_steps * accumulation_steps
+        progress = tqdm.tqdm(initial=start, total=config.num_train_steps, dynamic_ncols=True)
         infos = []
-        for step in progress:
+        for micro_step in range(micro_step_start, total_micro_steps):
             with sharding.set_mesh(mesh):
                 state, info = step_fn(train_rng, state, batch)
-            completed = step + 1
             infos.append(info)
+            if (micro_step + 1) % accumulation_steps:
+                batch = next(data_iter)
+                continue
+            completed = (micro_step + 1) // accumulation_steps
+            progress.update(1)
             if completed == start + 1 or completed % config.log_interval == 0 or completed == config.num_train_steps:
                 metrics = jax.device_get(jax.tree.map(jnp.mean, common_utils.stack_forest(infos)))
                 progress.write(f"Step {completed}: " + ', '.join(f'{k}={v:.4f}' for k, v in metrics.items()))
                 wandb.log(metrics, step=completed)
                 infos = []
             if should_save(completed, config.num_train_steps, config.save_interval):
-                if int(state.step) != completed:
-                    raise RuntimeError('Optimizer step and checkpoint label disagree')
+                if int(state.step) != completed * accumulation_steps:
+                    raise RuntimeError('Micro-step and checkpoint label disagree')
                 checkpoints.save_state(manager, state, loader, completed)
-            if completed < config.num_train_steps:
+            if micro_step + 1 < total_micro_steps:
                 batch = next(data_iter)
         manager.wait_until_finished()
+        progress.close()
     finally:
         manager.close()

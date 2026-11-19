@@ -4,6 +4,7 @@
   "joint_repo_id": "robotwin_five_pi0_ee_subset20_seed42",
   "pretrained_params": "/home/huahungy/.cache/openpi/openpi-assets/checkpoints/pi0_base/params",
   "training_mode": "joint",
+  "training_recipe": "openpi_pi0_lora_official_freeze_v1",
   "batch_size": 4,
   "num_train_steps": 5000,
   "num_workers": 1,

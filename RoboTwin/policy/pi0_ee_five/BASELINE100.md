@@ -3,10 +3,16 @@
 This baseline uses `robotwin_five_pi0_ee_subset20_seed42`: 20 trajectories from
 each of the five tasks, 100 trajectories and 15,789 frames in total. It starts
 from `pi0_base` and trains the standard Pi0 LoRA adapters without the cluster
-expert bank, MLP router, or routed residual branch.
+expert bank, MLP router, or routed residual branch. Its freeze filter is the
+official OpenPI `Pi0Config.get_freeze_filter()`: the original Gemma weights are
+frozen while LoRA parameters, the vision encoder, and control projections are
+trainable.
 
-The training settings match the routed run: global batch 4, 5,000 optimizer
-steps, seed 42, peak learning rate `1e-5`, 500 warmup steps, cosine decay,
+The server training settings match the routed run. On the local 24GB RTX 4090,
+the official trainable vision encoder only fits with batch 1. Both physical
+batch 4 and micro-batch 1 with four-step accumulation were verified to run out
+of memory. Other settings remain 5,000 optimizer steps, seed 42, peak learning
+rate `1e-5`, 500 warmup steps, cosine decay,
 50-step action horizon, and checkpoints every 1,000 steps. Evaluation uses the
 same five tasks, unseen instructions, seed 0, 20 expert-solvable episodes per
 task, 10 executed actions per inference, and 10 diffusion steps. All 100
@@ -21,8 +27,12 @@ GPU_IDS=0 bash RoboTwin/policy/pi0_ee_five/run_baseline100.sh
 
 Resume the same experiment with `--resume`. The preparation report is written
 to `reports/baseline100_preparation.json`; training and evaluation outputs are
-under `runs/pi0_baseline100_b4_s5000`; the final comparison is written as both
+under `runs/pi0_baseline100_b1_s5000_official`; the final comparison is written as both
 `comparison_vs_router.json` and `comparison_vs_router.md`.
+
+Checkpoints produced by the older configuration that additionally froze the
+vision encoder must not be resumed. Start the official-filter experiment with a
+new run name and initialize it again from `pi0_base`.
 
 For the server experiment with global batch 32, select the GPUs through
 `GPU_IDS`. By default all selected GPUs form one FSDP group; override

@@ -24,7 +24,9 @@
 | action horizon | 50 |
 | checkpoint 间隔 | 1,000 步；当前配置最终保留最新的完整 checkpoint |
 | 评测 | 五任务各 20 次，seed 0，保存视频 |
-| 训练内容 | 标准 Pi0 LoRA；不使用簇专家、MLP Router 或残差 LoRA |
+| 训练内容 | OpenPI 官方 Pi0 LoRA 冻结规则；视觉编码器可训练，不使用簇专家、MLP Router 或残差 LoRA |
+
+这里采用 OpenPI 官方的低显存 LoRA 微调配置：冻结 Gemma 原始大权重，训练 LoRA、视觉编码器和控制投射层。它不同于不冻结任何参数的全参数微调。
 
 ## 1. 推荐的服务器条件
 
@@ -95,17 +97,17 @@ python3 --version
         └── pi0_ee_five/
             ├── baseline100_config.json
             ├── run_baseline100_b32.sh
-            ├── assets/                # 服务器自动生成归一化统计
+            ├── assets/                # 数据包提供归一化统计；prepare 会校验或重算
             └── runs/                  # 服务器自动生成训练与评测产物
 ```
 
 ## 3. 必须单独搬运的内容
 
-Git 仓库不包含数据、基础权重、归一化文件、checkpoint、仿真资源或评测结果。需要搬运：
+Git 仓库不包含数据、归一化文件、基础权重、checkpoint、仿真资源或评测结果。Baseline100 数据与对应归一化统计已经整理成一个 ModelScope 数据包；其余大文件仍需单独搬运：
 
 | 内容 | 本机来源 | 服务器目标 | 大小 |
 |---|---|---|---:|
-| Baseline100 合并数据集 | `/home/huahungy/RoboLoRAHub/data_clustering/data/merged/robotwin_five_pi0_ee_subset20_seed42/` | `data_clustering/data/merged/robotwin_five_pi0_ee_subset20_seed42/` | 约 1.6GB |
+| Baseline100 数据与共享归一化 | ModelScope `huahongyu/robotwin-pi0-baseline100-ee` | 数据路径和 `RoboTwin/policy/pi0_ee_five/assets/` | 约 1.6GB（压缩前） |
 | Pi0 基础参数 | `/home/huahungy/.cache/openpi/openpi-assets/checkpoints/pi0_base/params/` | `transfer/openpi/openpi-assets/checkpoints/pi0_base/params/` | 约 12GB |
 | PaliGemma tokenizer | `/home/huahungy/.cache/openpi/big_vision/paligemma_tokenizer.model` | `transfer/openpi/big_vision/paligemma_tokenizer.model` | 约 4.1MB |
 | RoboTwin 仿真资源 | `/home/huahungy/RoboLoRAHub/RoboTwin/assets/` | `RoboTwin/assets/` | 约 16GB |
@@ -113,20 +115,45 @@ Git 仓库不包含数据、基础权重、归一化文件、checkpoint、仿真
 不需要搬运以下内容：
 
 - 本机 `.venv`、JAX 编译缓存或 Hugging Face Arrow 缓存。
-- 本机 baseline 的归一化文件；服务器会使用这100条轨迹重新计算。
 - 本机 batch-4 checkpoint、日志和评测视频。
 - 七簇 LoRA、Router checkpoint 或聚类数据。
 - 原始 HDF5 数据。图像已经作为压缩字节保存在 Parquet 的三个相机列中。
 
-在本机执行以下搬运示例；先修改服务器地址和目标目录：
+在服务器安装 ModelScope 官方 Hub CLI，并下载数据包：
+
+```bash
+python3 -m pip install -U modelscope-hub
+
+mkdir -p /workspace/modelscope_baseline100
+ms-hub download huahongyu/robotwin-pi0-baseline100-ee \
+  --repo-type dataset \
+  --local-dir /workspace/modelscope_baseline100
+
+cd /workspace/modelscope_baseline100
+sha256sum -c robotwin_pi0_baseline100_ee_v1_20261119.tar.zst.sha256
+
+cd /workspace/RoboLoRA
+tar --zstd -xf \
+  /workspace/modelscope_baseline100/robotwin_pi0_baseline100_ee_v1_20261119.tar.zst
+sha256sum -c MANIFEST.sha256
+```
+
+压缩包按仓库相对路径组织，必须在仓库根目录解压。它会同时生成100条轨迹和以下归一化文件：
+
+```text
+RoboTwin/policy/pi0_ee_five/assets/joint_pi0_ee_five_lora/
+└── robotwin_five_pi0_ee_subset20_seed42/
+    ├── norm_stats.json
+    └── provenance.json
+```
+
+数据集设为私有时，服务器下载前先执行 `ms-hub login`，在隐藏提示中粘贴具有读权限的 ModelScope token。不要把 token 直接写入脚本或 Git 仓库。
+
+其余内容可使用 `rsync` 搬运；先修改服务器地址和目标目录：
 
 ```bash
 SERVER=user@server
 TARGET=/workspace/RoboLoRA
-
-rsync -a --info=progress2 \
-  /home/huahungy/RoboLoRAHub/data_clustering/data/merged/robotwin_five_pi0_ee_subset20_seed42/ \
-  "$SERVER:$TARGET/data_clustering/data/merged/robotwin_five_pi0_ee_subset20_seed42/"
 
 rsync -a --info=progress2 \
   /home/huahungy/.cache/openpi/openpi-assets/checkpoints/pi0_base/params/ \
@@ -240,7 +267,7 @@ export OPENPI_DATA_HOME="$PWD/transfer/openpi"
 PI0_PARAMS="$PWD/transfer/openpi/openpi-assets/checkpoints/pi0_base/params"
 ```
 
-先检查并计算100条数据对应的共享32维归一化统计：
+先检查100条数据与共享32维归一化统计。压缩包中的统计与当前100条轨迹匹配时会直接复用；缺失或 provenance 不一致时会重新计算：
 
 ```bash
 bash RoboTwin/policy/pi0_ee_five/run.sh prepare \
@@ -347,6 +374,8 @@ tail -f "$(find RoboTwin/policy/pi0_ee_five/runs/pi0_baseline100_b32_s5000/logs 
 
 ## 8. 续训
 
+只能续训由当前官方冻结规则创建的 checkpoint。旧版额外冻结视觉编码器，优化器参数树不同，不能从旧 checkpoint 续训；必须使用新 `RUN_NAME` 从 `pi0_base` 重新开始。
+
 如果训练中断，保持相同数据、基础权重、batch、FSDP设置和运行目录，增加 `--resume`：
 
 ```bash
@@ -448,7 +477,7 @@ bash setup_server_ee.sh eval
 - [ ] Pi0 `params/` 目录完整，约12GB。
 - [ ] PaliGemma tokenizer 存在，并设置 `OPENPI_DATA_HOME`。
 - [ ] RoboTwin `assets/` 已完整搬运，约16GB。
-- [ ] `prepare` 成功生成100条数据对应的共享归一化。
+- [ ] `prepare` 成功校验或重新生成100条数据对应的共享归一化。
 - [ ] 两步 batch-32 smoke test 成功。
 - [ ] 至少预留约80GB可用空间。
 - [ ] 使用 `nohup` 或服务器作业调度器启动正式实验。

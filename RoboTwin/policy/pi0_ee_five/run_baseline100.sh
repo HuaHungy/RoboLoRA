@@ -3,8 +3,10 @@ set -euo pipefail
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="$(cd "$HERE/../../.." && pwd)"
-RUN_NAME="pi0_baseline100_b4_s5000"
 GPU_IDS="${GPU_IDS:-0}"
+EFFECTIVE_BATCH_SIZE="${EFFECTIVE_BATCH_SIZE:-1}"
+MICRO_BATCH_SIZE="${MICRO_BATCH_SIZE:-$EFFECTIVE_BATCH_SIZE}"
+RUN_NAME="${RUN_NAME:-pi0_baseline100_b${EFFECTIVE_BATCH_SIZE}_s5000_official}"
 
 for argument in "$@"; do
   if [[ "$argument" == "-h" || "$argument" == "--help" ]]; then
@@ -20,7 +22,8 @@ bash "$HERE/run.sh" all \
   --config "$HERE/baseline100_config.json" \
   --run-name "$RUN_NAME" \
   --gpu "$GPU_IDS" \
-  --batch-size 4 \
+  --batch-size "$EFFECTIVE_BATCH_SIZE" \
+  --micro-batch-size "$MICRO_BATCH_SIZE" \
   --train-steps 5000 \
   --save-interval 1000 \
   --eval-episodes 20 \

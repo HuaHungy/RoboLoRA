@@ -59,6 +59,8 @@ def main():
     parser.add_argument('--tasks', nargs='+', choices=TASKS, default=list(TASKS), help='Evaluation tasks; joint training always uses all five')
     parser.add_argument('--gpu', default=os.environ.get('CUDA_VISIBLE_DEVICES', '0'))
     parser.add_argument('--batch-size', type=int)
+    parser.add_argument('--micro-batch-size', type=int,
+                        help='Per micro-step global batch; gradients are accumulated to --batch-size')
     parser.add_argument('--train-steps', type=int)
     parser.add_argument('--save-interval', type=int)
     parser.add_argument('--keep-period', type=int)
@@ -89,15 +91,25 @@ def main():
             if value <= 0:
                 parser.error(f'{key} must be positive')
             settings[key] = value
+    if args.micro_batch_size is not None:
+        if args.micro_batch_size <= 0 or settings['batch_size'] % args.micro_batch_size:
+            parser.error('micro-batch-size must be positive and divide the effective batch-size')
+        settings['micro_batch_size'] = args.micro_batch_size
+        settings['gradient_accumulation_steps'] = settings['batch_size'] // args.micro_batch_size
+    else:
+        settings['micro_batch_size'] = settings['batch_size']
+        settings['gradient_accumulation_steps'] = 1
     for key, value in [('dataset_root', args.dataset_root), ('pretrained_params', args.pretrained_params)]:
         if value is not None:
             settings[key] = str(value.expanduser().resolve())
     gpu_count = len(args.gpu.split(','))
     if args.stage in ('train', 'all'):
-        if settings['batch_size'] % gpu_count or gpu_count % settings.get('fsdp_devices', 1):
-            parser.error('Global batch_size must be divisible by GPU count; fsdp-devices must divide GPU count')
+        if (settings['batch_size'] % gpu_count or settings['micro_batch_size'] % gpu_count
+                or gpu_count % settings.get('fsdp_devices', 1)):
+            parser.error('Effective and micro batch sizes must be divisible by GPU count; fsdp-devices must divide GPU count')
         print(f"Joint training: global batch={settings['batch_size']}, GPUs={args.gpu}, "
-              f"batch/GPU={settings['batch_size'] // gpu_count}, FSDP={settings.get('fsdp_devices', 1)}", flush=True)
+              f"micro batch={settings['micro_batch_size']}, accumulation={settings['gradient_accumulation_steps']}, "
+              f"effective batch/GPU={settings['batch_size'] // gpu_count}, FSDP={settings.get('fsdp_devices', 1)}", flush=True)
     os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu
     setup(settings)
     if args.stage == 'prepare':

@@ -31,7 +31,9 @@ def main():
     if not norm_path.is_file():
         raise FileNotFoundError(f'Missing EE normalization: {norm_path}; run prepare first')
     print(f'Task={args.task}, batch_size={cfg.batch_size}, steps={cfg.num_train_steps}, '
-          f'EE horizon={cfg.model.action_horizon}, vision frozen, EMA disabled', flush=True)
+          f'EE horizon={cfg.model.action_horizon}, official Pi0 LoRA freeze filter, '
+          f"vision trainable, gradient accumulation={cfg.policy_metadata['gradient_accumulation_steps']}, "
+          'EMA disabled', flush=True)
     trainer = load_module('pi0_ee_upstream_train', PI0 / 'scripts/train.py')
     from train_loop import main as train
     train(trainer, cfg)

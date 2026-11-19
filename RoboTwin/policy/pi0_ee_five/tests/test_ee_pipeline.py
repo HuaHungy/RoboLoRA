@@ -71,6 +71,8 @@ class EETests(unittest.TestCase):
         self.assertEqual(cfg.lr_schedule.peak_lr, 1e-5)
         self.assertEqual(settings['warmup_steps'], 500)
         self.assertEqual(cfg.model.action_horizon, 50)
+        self.assertEqual(settings['training_recipe'], 'openpi_pi0_lora_official_freeze_v1')
+        self.assertEqual(cfg.policy_metadata['training_recipe'], settings['training_recipe'])
 
     def test_upstream_optimizer_initialization_shape_with_compat(self):
         setup(read_settings())
@@ -124,14 +126,14 @@ class EETests(unittest.TestCase):
         reset_model(model)
         self.assertIsNone(model.previous_state)
 
-    def test_lora_config_freezes_vision_and_keeps_adapters_and_control_projections_trainable(self):
+    def test_lora_config_matches_official_filter_and_keeps_vision_adapters_and_control_projections_trainable(self):
         settings = read_settings(); setup(settings)
         import flax.nnx as nnx
         from openpi.transforms import DeltaActions
         cfg = build_config('adjust_bottle', settings, HERE / 'runs/_test_only')
         predicate = nnx.filterlib.to_predicate(cfg.freeze_filter)
         value = nnx.Param(np.zeros((1,)))
-        self.assertTrue(predicate(('PaliGemma', 'img', 'embedding', 'kernel'), value))
+        self.assertFalse(predicate(('PaliGemma', 'img', 'embedding', 'kernel'), value))
         self.assertTrue(predicate(('PaliGemma', 'llm', 'layers', 'attn', 'kernel'), value))
         self.assertFalse(predicate(('PaliGemma', 'llm', 'layers', 'attn', 'lora_a'), value))
         self.assertFalse(predicate(('action_out_proj', 'kernel'), value))

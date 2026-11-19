@@ -88,14 +88,14 @@ def prepare_task(task, settings, check_loader=True):
         from openpi.training import data_loader
         loader = data_loader.create_data_loader(cfg, num_batches=1, num_workers=0, shuffle=False)
         observation, actions = next(iter(loader))
-        assert observation.state.shape == (settings['batch_size'], 32)
-        assert actions.shape == (settings['batch_size'], settings['action_horizon'], 32)
-        assert all(image.shape == (settings['batch_size'], 224, 224, 3) for image in observation.images.values())
+        assert observation.state.shape == (cfg.batch_size, 32)
+        assert actions.shape == (cfg.batch_size, settings['action_horizon'], 32)
+        assert all(image.shape == (cfg.batch_size, 224, 224, 3) for image in observation.images.values())
         assert all(np.asarray(mask).all() for mask in observation.image_masks.values())
         assert np.asarray(observation.tokenized_prompt_mask).any()
         assert np.isfinite(np.asarray(actions)).all()
         provenance['loader_check'] = {'state': list(observation.state.shape), 'actions': list(actions.shape),
-                                      'three_camera_images': [settings['batch_size'], 224, 224, 3], 'language_tokenized': True}
+                                      'three_camera_images': [cfg.batch_size, 224, 224, 3], 'language_tokenized': True}
     write_json(HERE / 'reports' / f'{task}_data_check.json', provenance)
     print(f"{task}: {len(files)} episodes, {total} frames; numeric EE checks PASS; loader checked={check_loader}", flush=True)
     return provenance
@@ -199,20 +199,22 @@ def prepare_merged_joint(settings):
 
     loader = data_loader.create_data_loader(cfg, num_batches=1, num_workers=0, shuffle=False)
     observation, actions = next(iter(loader))
-    assert observation.state.shape == (settings['batch_size'], 32)
-    assert actions.shape == (settings['batch_size'], settings['action_horizon'], 32)
-    assert all(image.shape == (settings['batch_size'], 224, 224, 3) for image in observation.images.values())
+    assert observation.state.shape == (cfg.batch_size, 32)
+    assert actions.shape == (cfg.batch_size, settings['action_horizon'], 32)
+    assert all(image.shape == (cfg.batch_size, 224, 224, 3) for image in observation.images.values())
     assert np.asarray(observation.tokenized_prompt_mask).any()
     assert np.isfinite(np.asarray(actions)).all()
     report = {
         **provenance,
-        'batch_size': settings['batch_size'],
+        'effective_batch_size': settings['batch_size'],
+        'micro_batch_size': cfg.batch_size,
+        'gradient_accumulation_steps': settings.get('gradient_accumulation_steps', 1),
         'optimizer_steps': settings['num_train_steps'],
         'equivalent_frame_passes': settings['num_train_steps'] * settings['batch_size'] / total,
         'loader_check': {
             'state': list(observation.state.shape),
             'actions': list(actions.shape),
-            'three_camera_images': [settings['batch_size'], 224, 224, 3],
+            'three_camera_images': [cfg.batch_size, 224, 224, 3],
             'language_tokenized': True,
         },
         'training_started': False,
@@ -220,7 +222,8 @@ def prepare_merged_joint(settings):
     write_json(HERE / 'reports/baseline100_preparation.json', report)
     print(
         f"Baseline100 PASS: 5x20={len(files)} episodes, {total} frames; "
-        f"shared 32D normalization and loader checked; batch={settings['batch_size']}",
+        f"shared 32D normalization and loader checked; effective batch={settings['batch_size']}, "
+        f"micro batch={cfg.batch_size}",
         flush=True,
     )
     return report
@@ -291,20 +294,24 @@ def prepare_joint(settings):
     # Exercise the same batching/sharding used by create_data_loader, reusing the
     # already checked sources rather than opening all five image datasets twice.
     from openpi.models.model import Observation
-    loader = data_loader.TorchDataLoader(transformed, local_batch_size=settings['batch_size'],
+    loader_batch_size = settings.get('micro_batch_size', settings['batch_size'])
+    loader = data_loader.TorchDataLoader(transformed, local_batch_size=loader_batch_size,
                                         num_batches=1, num_workers=0, shuffle=True, seed=settings['seed'])
     batch = next(iter(loader))
     observation, actions = Observation.from_dict(batch), batch['actions']
-    assert observation.state.shape == (settings['batch_size'], 32)
-    assert actions.shape == (settings['batch_size'], settings['action_horizon'], 32)
+    assert observation.state.shape == (loader_batch_size, 32)
+    assert actions.shape == (loader_batch_size, settings['action_horizon'], 32)
     assert np.isfinite(np.asarray(actions)).all()
-    report = {**provenance, 'loader_checks': checks, 'batch_size': settings['batch_size'],
+    report = {**provenance, 'loader_checks': checks, 'effective_batch_size': settings['batch_size'],
+              'micro_batch_size': loader_batch_size,
+              'gradient_accumulation_steps': settings.get('gradient_accumulation_steps', 1),
               'optimizer_steps': settings['num_train_steps'],
               'equivalent_dataset_passes': settings['num_train_steps'] * settings['batch_size'] / provenance['frames'],
               'training_started': False}
     write_json(HERE / 'reports/joint_preparation.json', report)
     print(f"Joint PASS: {provenance['episodes']} episodes, {provenance['frames']} frames; "
-          f"5 task prompts, 3 cameras, shared normalization; batch={settings['batch_size']}", flush=True)
+          f"5 task prompts, 3 cameras, shared normalization; effective batch={settings['batch_size']}, "
+          f"micro batch={loader_batch_size}", flush=True)
     return report
 
 

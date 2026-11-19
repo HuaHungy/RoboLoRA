@@ -48,6 +48,28 @@ class ServerTests(unittest.TestCase):
             train_loop.main(trainer, cfg)
         self.assertEqual(saved, [(5, 5), (10, 10), (12, 12)])
 
+    def test_gradient_accumulation_keeps_effective_step_checkpoint_labels(self):
+        setup(read_settings())
+        import train_loop
+        cfg = SimpleNamespace(batch_size=1, seed=42, fsdp_devices=1, keep_period=None, overwrite=False,
+                              resume=False, wandb_enabled=False, num_workers=0, num_train_steps=3,
+                              log_interval=50, save_interval=2, checkpoint_dir=Path('/tmp/test/ga/model'),
+                              policy_metadata={'gradient_accumulation_steps': 4})
+        trainer = SimpleNamespace(init_logging=lambda: None, init_wandb=lambda *a, **kw: None,
+                                  training_utils=SimpleNamespace(array_tree_to_info=lambda b: 'micro batch'),
+                                  init_train_state=lambda *a, **kw: (SimpleNamespace(step=0), None),
+                                  train_step=lambda c, r, s, b: (SimpleNamespace(step=s.step + 1), {'loss': np.float32(1)}))
+        manager = SimpleNamespace(wait_until_finished=lambda: None, close=lambda: None)
+        saved = []
+        with patch.object(train_loop.checkpoints, 'initialize_checkpoint_dir', return_value=(manager, False)), \
+             patch.object(train_loop.checkpoints, 'save_state', side_effect=lambda m,s,l,n: saved.append((n,s.step))), \
+             patch.object(train_loop.data_loader, 'create_data_loader', return_value=itertools.repeat(np.zeros(1))), \
+             patch.object(train_loop.jax, 'jit', side_effect=lambda f, **kw: f), \
+             patch.object(train_loop.jax, 'block_until_ready', side_effect=lambda s: s), \
+             patch.object(train_loop.wandb, 'log'):
+            train_loop.main(trainer, cfg)
+        self.assertEqual(saved, [(2, 8), (3, 12)])
+
     def test_orbax_retains_all_four_server_checkpoints(self):
         setup(read_settings())
         from openpi.training import checkpoints
